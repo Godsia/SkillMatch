@@ -1,0 +1,42 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/skillmatch}
+    username: ${DB_USERNAME:skillmatch}
+    password: ${DB_PASSWORD:skillmatch}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    accessTokenTtlMinutes: 120
+  verification:
+    codeTtlMinutes: 10
+
+  oauth:
+#    тут нужно ввести гугл/яндекс секрет id

@@ -20,6 +20,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
+        if (path.equals("/auth/register/verify-email") || path.equals("/auth/register/set-password")) {
+            return false;
+        }
         return path.startsWith("/auth/");
     }
     @Override

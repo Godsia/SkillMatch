@@ -4,6 +4,7 @@ import com.skillmatch.backend.auth.dto.*;
 import com.skillmatch.backend.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,13 +30,15 @@ public class AuthController {
     }
 
     @PostMapping("/register/verify-email")
-    public void verifyEmail(@Valid @RequestBody VerifyEmailRequest req) {
-        authService.verifyEmail(req);
+    public RegisterStepResponse verifyEmail(Authentication auth, @Valid @RequestBody VerifyEmailRequest req) {
+        Long userId = (Long) auth.getPrincipal();
+        return authService.verifyEmail(userId, req);
     }
 
     @PostMapping("/register/set-password")
-    public void setPassword(@Valid @RequestBody SetPasswordRequest req) {
-        authService.setPassword(req);
+    public RegisterStepResponse setPassword(Authentication auth, @Valid @RequestBody SetPasswordRequest req) {
+        Long userId = (Long) auth.getPrincipal();
+        return authService.setPassword(userId, req);
     }
 
     @PostMapping("/login")

@@ -22,7 +22,9 @@ import java.util.Random;
 public class AuthService {
 
     private final YandexOAuthService yandexOAuthService;
-    private final GoogleIdTokenVerifier googleTokenVerifier;
+
+    private final GoogleIdTokenVerifier googleVerifier;
+
     private final EmailService emailService;
     private final UserRepository userRepository;
     private final EmailCodeRepository emailCodeRepository;
@@ -55,12 +57,15 @@ public class AuthService {
         emailCodeRepository.save(c);
 
         emailService.sendVerificationCode(u.getEmail(), code);
-        return new RegisterInitResponse(u.getId(), "Verification code sent");
+
+        // Один токен на всю регистрацию: выдаём только тут
+        String token = jwtService.issueToken(u.getId(), u.getEmail());
+        return new RegisterInitResponse(token, u.getStatus(), "Verification code sent");
     }
 
-    public void verifyEmail(VerifyEmailRequest req) {
+    public RegisterStepResponse verifyEmail(Long userId, VerifyEmailRequest req) {
         EmailVerificationCode code = emailCodeRepository
-                .findTopByUserIdOrderByCreatedAtDesc(req.userId())
+                .findTopByUserIdOrderByCreatedAtDesc(userId)
                 .orElseThrow(() -> new ApiException("Verification code not found"));
 
         if (code.isUsed()) throw new ApiException("Code already used");
@@ -70,26 +75,32 @@ public class AuthService {
         code.setUsed(true);
         emailCodeRepository.save(code);
 
-        User u = userRepository.findById(req.userId())
+        User u = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException("User not found"));
 
         u.setStatus(UserStatus.EMAIL_CONFIRMED);
-        userRepository.save(u);
+        u = userRepository.save(u);
+
+        return new RegisterStepResponse(u.getStatus());
     }
 
-    public void setPassword(SetPasswordRequest req) {
+    public RegisterStepResponse setPassword(Long userId, SetPasswordRequest req) {
         if (!req.password().equals(req.confirmPassword())) {
             throw new ApiException("Passwords do not match");
         }
 
-        User u = userRepository.findById(req.userId())
+        User u = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException("User not found"));
 
         if (u.getStatus() != UserStatus.EMAIL_CONFIRMED) {
             throw new ApiException("Email is not confirmed");
         }
+
         u.setPasswordHash(passwordEncoder.encode(req.password()));
-        userRepository.save(u);
+        u.setStatus(UserStatus.ACTIVE);
+        u = userRepository.save(u);
+
+        return new RegisterStepResponse(u.getStatus());
     }
 
     public LoginResponse login(LoginRequest req) {
@@ -102,10 +113,9 @@ public class AuthService {
             throw new ApiException("Invalid credentials");
         }
 
-        String token = jwtService.issueToken(u.getId(), u.getEmail());
-        return new LoginResponse(token, u.getStatus());
+        String jwt = jwtService.issueToken(u.getId(), u.getEmail());
+        return new LoginResponse(jwt, u.getStatus());
     }
-    private final GoogleIdTokenVerifier googleVerifier;
 
     public LoginResponse loginGoogle(GoogleLoginRequest req) {
         GoogleIdTokenVerifier.GoogleUserInfo info = googleVerifier.verify(req.idToken());
@@ -118,14 +128,16 @@ public class AuthService {
             nu.setStatus(info.emailVerified() ? UserStatus.EMAIL_CONFIRMED : UserStatus.NEW);
             return userRepository.save(nu);
         });
+
         if (info.emailVerified() && u.getStatus() == UserStatus.NEW) {
             u.setStatus(UserStatus.EMAIL_CONFIRMED);
             u = userRepository.save(u);
         }
 
-        String token = jwtService.issueToken(u.getId(), u.getEmail());
-        return new LoginResponse(token, u.getStatus());
+        String jwt = jwtService.issueToken(u.getId(), u.getEmail());
+        return new LoginResponse(jwt, u.getStatus());
     }
+
     public OAuthLoginResponse loginWithYandex(String code) {
         var token = yandexOAuthService.exchangeCode(code);
         var info = yandexOAuthService.fetchUserInfo(token.accessToken());
@@ -150,8 +162,6 @@ public class AuthService {
         String jwt = jwtService.issueToken(u.getId(), u.getEmail());
         return new OAuthLoginResponse(jwt, u.getStatus(), needsOnboarding);
     }
-
-
 
     private String generate6Digits() {
         return String.valueOf(100000 + new Random().nextInt(900000));

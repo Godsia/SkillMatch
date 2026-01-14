@@ -19,6 +19,8 @@ repositories {
 }
 
 dependencies {
+    implementation ("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
     implementation("com.google.http-client:google-http-client-jackson2:1.45.0")
     implementation("com.google.api-client:google-api-client:2.7.0")
     implementation("org.springframework.boot:spring-boot-starter-mail")

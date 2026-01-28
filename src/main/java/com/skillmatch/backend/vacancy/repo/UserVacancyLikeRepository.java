@@ -1,0 +1,19 @@
+package com.skillmatch.backend.vacancy.repo;
+
+import com.skillmatch.backend.vacancy.model.UserVacancyLike;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface UserVacancyLikeRepository extends JpaRepository<UserVacancyLike, Long> {
+
+    Optional<UserVacancyLike> findByUserIdAndVacancyId(Long userId, Long vacancyId);
+
+    @Query("select l.vacancyId from UserVacancyLike l where l.userId = :userId and l.liked = true")
+    List<Long> findLikedVacancyIds(@Param("userId") Long userId);
+
+    List<UserVacancyLike> findAllByUserIdAndLikedTrue(Long userId);
+}

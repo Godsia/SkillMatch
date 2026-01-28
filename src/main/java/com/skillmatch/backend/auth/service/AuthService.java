@@ -58,7 +58,7 @@ public class AuthService {
 
         emailService.sendVerificationCode(u.getEmail(), code);
 
-        // Один токен на всю регистрацию: выдаём только тут
+        
         String token = jwtService.issueToken(u.getId(), u.getEmail());
         return new RegisterInitResponse(token, u.getStatus(), "Verification code sent");
     }

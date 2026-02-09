@@ -73,7 +73,7 @@ public class VacancyMatchService {
                     .build());
         }
 
-        
+
         res.sort(Comparator
                 .comparingDouble(VacancyMatchResponse::getMatchPercent).reversed()
                 .thenComparing(VacancyMatchResponse::getPublishedAt, Comparator.nullsLast(Comparator.reverseOrder()))
@@ -133,6 +133,68 @@ public class VacancyMatchService {
                     .skills(skillNames)
                     .matchPercent(matchPercent)
                     .liked(true)
+                    .build());
+        }
+
+        res.sort(Comparator
+                .comparingDouble(VacancyMatchResponse::getMatchPercent).reversed()
+                .thenComparing(VacancyMatchResponse::getPublishedAt, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(VacancyMatchResponse::getId));
+
+        return res;
+    }
+
+    public List<VacancyMatchResponse> listDislikedForUser(Long userId) {
+        Set<Long> userSkillIds = userSkillRepository.findAllByUserId(userId).stream()
+                .map(us -> us.getSkillId())
+                .collect(Collectors.toSet());
+
+        List<Long> dislikedIds = userVacancyLikeRepository.findDislikedVacancyIds(userId);
+        if (dislikedIds.isEmpty()) return List.of();
+
+        List<Vacancy> vacancies = vacancyRepository.findAllById(dislikedIds);
+
+        List<VacancyMatchResponse> res = new ArrayList<>(vacancies.size());
+        for (Vacancy v : vacancies) {
+            int total = (v.getSkills() == null) ? 0 : v.getSkills().size();
+            int overlap = 0;
+
+            List<String> skillNames = List.of();
+            if (v.getSkills() != null && !v.getSkills().isEmpty()) {
+                skillNames = v.getSkills().stream()
+                        .map(s -> s.getName())
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .sorted(String::compareToIgnoreCase)
+                        .collect(Collectors.toList());
+
+                for (var s : v.getSkills()) {
+                    if (s.getId() != null && userSkillIds.contains(s.getId())) {
+                        overlap++;
+                    }
+                }
+            }
+
+            double matchPercent = (total == 0) ? 0.0 : (100.0 * overlap / (double) total);
+
+            res.add(VacancyMatchResponse.builder()
+                    .id(v.getId())
+                    .source(v.getSource())
+                    .sourceVacancyId(v.getSourceVacancyId())
+                    .title(v.getTitle())
+                    .descriptionPlain(v.getDescriptionPlain())
+                    .url(v.getUrl())
+                    .employerName(v.getEmployerName())
+                    .employerLogoUrl(v.getEmployerLogoUrl())
+                    .areaName(v.getAreaName())
+                    .publishedAt(v.getPublishedAt())
+                    .salaryFrom(v.getSalaryFrom())
+                    .salaryTo(v.getSalaryTo())
+                    .salaryCurrency(v.getSalaryCurrency())
+                    .salaryGross(v.getSalaryGross())
+                    .skills(skillNames)
+                    .matchPercent(matchPercent)
+                    .liked(false)
                     .build());
         }
 

@@ -15,5 +15,10 @@ public interface UserVacancyLikeRepository extends JpaRepository<UserVacancyLike
     @Query("select l.vacancyId from UserVacancyLike l where l.userId = :userId and l.liked = true")
     List<Long> findLikedVacancyIds(@Param("userId") Long userId);
 
+    @Query("select l.vacancyId from UserVacancyLike l where l.userId = :userId and l.liked = false")
+    List<Long> findDislikedVacancyIds(@Param("userId") Long userId);
+
     List<UserVacancyLike> findAllByUserIdAndLikedTrue(Long userId);
+
+    List<UserVacancyLike> findAllByUserIdAndLikedFalse(Long userId);
 }

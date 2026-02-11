@@ -25,7 +25,12 @@ public class VacancyMatchService {
                 .map(us -> us.getSkillId())
                 .collect(Collectors.toSet());
 
-        List<Vacancy> vacancies = vacancyRepository.findAllByOrderByPublishedAtDesc();
+        // Exclude vacancies that the user already interacted with (liked OR disliked)
+        List<Long> interactedIds = userVacancyLikeRepository.findInteractedVacancyIds(userId);
+        List<Vacancy> vacancies = interactedIds.isEmpty()
+                ? vacancyRepository.findAllByOrderByPublishedAtDesc()
+                : vacancyRepository.findByIdNotInOrderByPublishedAtDesc(interactedIds);
+
         Set<Long> likedVacancyIds = new HashSet<>(userVacancyLikeRepository.findLikedVacancyIds(userId));
 
         List<VacancyMatchResponse> res = new ArrayList<>(vacancies.size());

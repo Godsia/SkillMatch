@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.List;
 
 @Service
@@ -47,27 +50,49 @@ public class ProfileService {
     public void setSkills(Long userId, SetSkillsRequest req) {
         User u = userRepository.findById(userId).orElseThrow(() -> new ApiException("User not found"));
 
-        userSkillRepository.deleteAllByUserId(userId);
+        LinkedHashSet<Long> requestedSkillIds = new LinkedHashSet<>();
+        if (req != null && req.skills() != null) {
+            for (SetSkillsRequest.SkillItem item : req.skills()) {
+                if (item == null) continue;
 
-        for (SetSkillsRequest.SkillItem item : req.skills()) {
-            Long skillId = item.skillId();
+                Long skillId = item.skillId();
 
-            if (skillId == null) {
-                String name = (item.customSkill() == null || item.customSkill().isBlank())
-                        ? null : item.customSkill().trim();
-                if (name == null) throw new ApiException("skillId or customSkill required");
+                if (skillId == null) {
+                    String name = (item.customSkill() == null || item.customSkill().isBlank())
+                            ? null : item.customSkill().trim();
+                    if (name == null) throw new ApiException("skillId or customSkill required");
 
-                Skill s = skillRepository.findByNameIgnoreCase(name).orElseGet(() -> {
-                    Skill created = new Skill();
-                    created.setName(name);
-                    return skillRepository.save(created);
-                });
-                skillId = s.getId();
+                    Skill s = skillRepository.findByNameIgnoreCase(name).orElseGet(() -> {
+                        Skill created = new Skill();
+                        created.setName(name);
+                        return skillRepository.save(created);
+                    });
+                    skillId = s.getId();
+                }
+
+                if (skillId == null) throw new ApiException("skillId or customSkill required");
+                requestedSkillIds.add(skillId);
             }
+        }
 
+        List<UserSkill> existing = userSkillRepository.findAllByUserId(userId);
+        Set<Long> existingSkillIds = existing.stream().map(UserSkill::getSkillId).collect(java.util.stream.Collectors.toSet());
+
+        if (!existingSkillIds.isEmpty()) {
+            ArrayList<Long> toRemove = new ArrayList<>();
+            for (Long sid : existingSkillIds) {
+                if (!requestedSkillIds.contains(sid)) toRemove.add(sid);
+            }
+            if (!toRemove.isEmpty()) {
+                userSkillRepository.deleteByUserIdAndSkillIdIn(userId, toRemove);
+            }
+        }
+
+        for (Long sid : requestedSkillIds) {
+            if (existingSkillIds.contains(sid)) continue;
             UserSkill us = new UserSkill();
             us.setUserId(userId);
-            us.setSkillId(skillId);
+            us.setSkillId(sid);
             userSkillRepository.save(us);
         }
 

@@ -12,4 +12,7 @@ public interface VacancyRepository extends JpaRepository<Vacancy, Long> {
 
     @EntityGraph(attributePaths = {"skills"})
     List<Vacancy> findAllByOrderByPublishedAtDesc();
+
+    @EntityGraph(attributePaths = {"skills"})
+    List<Vacancy> findByIdNotInOrderByPublishedAtDesc(List<Long> ids);
 }

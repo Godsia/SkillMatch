@@ -6,11 +6,13 @@ import com.skillmatch.backend.vacancy.model.VacancyFeedback;
 import com.skillmatch.backend.vacancy.repo.VacancyFeedbackRepository;
 import com.skillmatch.backend.vacancy.repo.VacancyRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VacancyFeedbackService {
@@ -20,6 +22,7 @@ public class VacancyFeedbackService {
 
     @Transactional
     public void saveFeedback(Long userId, Long vacancyId, boolean likedMatching, int rating) {
+        log.info("Saving feedback userId={}, vacancyId={}, liked={}, rating={}", userId, vacancyId, likedMatching, rating);
         if (!vacancyRepository.existsById(vacancyId)) {
             throw new ApiException("Vacancy not found");
         }
@@ -37,10 +40,12 @@ public class VacancyFeedbackService {
         feedback.setLikedMatching(likedMatching);
         feedback.setRating(rating);
         vacancyFeedbackRepository.save(feedback);
+        log.info("Feedback saved successfully userId={}, vacancyId={}", userId, vacancyId);
     }
 
     @Transactional(readOnly = true)
     public List<VacancyFeedbackResponse> getAllFeedback(Long userId) {
+        log.info("Fetching all feedback userId={}", userId);
         return vacancyFeedbackRepository.findAllByUserId(userId).stream()
                 .map(f -> VacancyFeedbackResponse.builder()
                         .id(f.getId())

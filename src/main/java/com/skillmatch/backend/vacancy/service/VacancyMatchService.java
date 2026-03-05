@@ -6,11 +6,13 @@ import com.skillmatch.backend.vacancy.model.Vacancy;
 import com.skillmatch.backend.vacancy.repo.VacancyRepository;
 import com.skillmatch.backend.vacancy.repo.UserVacancyLikeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VacancyMatchService {
@@ -20,6 +22,7 @@ public class VacancyMatchService {
     private final UserVacancyLikeRepository userVacancyLikeRepository;
 
     public List<VacancyMatchResponse> listMatchesForUser(Long userId) {
+        log.info("Listing vacancy matches userId={}", userId);
 
         Set<Long> userSkillIds = userSkillRepository.findAllByUserId(userId).stream()
                 .map(us -> us.getSkillId())
@@ -84,10 +87,12 @@ public class VacancyMatchService {
                 .thenComparing(VacancyMatchResponse::getPublishedAt, Comparator.nullsLast(Comparator.reverseOrder()))
                 .thenComparing(VacancyMatchResponse::getId));
 
+        log.info("Found {} vacancy matches for userId={}", res.size(), userId);
         return res;
     }
 
     public List<VacancyMatchResponse> listLikedForUser(Long userId) {
+        log.info("Listing liked vacancies userId={}", userId);
         Set<Long> userSkillIds = userSkillRepository.findAllByUserId(userId).stream()
                 .map(us -> us.getSkillId())
                 .collect(Collectors.toSet());
@@ -146,10 +151,12 @@ public class VacancyMatchService {
                 .thenComparing(VacancyMatchResponse::getPublishedAt, Comparator.nullsLast(Comparator.reverseOrder()))
                 .thenComparing(VacancyMatchResponse::getId));
 
+        log.info("Found {} liked vacancies for userId={}", res.size(), userId);
         return res;
     }
 
     public List<VacancyMatchResponse> listDislikedForUser(Long userId) {
+        log.info("Listing disliked vacancies userId={}", userId);
         Set<Long> userSkillIds = userSkillRepository.findAllByUserId(userId).stream()
                 .map(us -> us.getSkillId())
                 .collect(Collectors.toSet());
@@ -208,6 +215,7 @@ public class VacancyMatchService {
                 .thenComparing(VacancyMatchResponse::getPublishedAt, Comparator.nullsLast(Comparator.reverseOrder()))
                 .thenComparing(VacancyMatchResponse::getId));
 
+        log.info("Found {} disliked vacancies for userId={}", res.size(), userId);
         return res;
     }
 }

@@ -5,9 +5,11 @@ import com.skillmatch.backend.vacancy.model.UserVacancyLike;
 import com.skillmatch.backend.vacancy.repo.UserVacancyLikeRepository;
 import com.skillmatch.backend.vacancy.repo.VacancyRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VacancyLikeService {
@@ -17,6 +19,7 @@ public class VacancyLikeService {
 
     @Transactional
     public void setLike(Long userId, Long vacancyId, boolean liked) {
+        log.info("User {} {} vacancy {}", userId, liked ? "liked" : "disliked", vacancyId);
         if (!vacancyRepository.existsById(vacancyId)) {
             throw new ApiException("Vacancy not found");
         }
@@ -31,5 +34,6 @@ public class VacancyLikeService {
 
         rec.setLiked(liked);
         userVacancyLikeRepository.save(rec);
+        log.info("Like saved userId={}, vacancyId={}, liked={}", userId, vacancyId, liked);
     }
 }

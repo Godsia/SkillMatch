@@ -9,6 +9,7 @@ import com.skillmatch.backend.user.model.User;
 import com.skillmatch.backend.user.model.UserStatus;
 import com.skillmatch.backend.user.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Random;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -35,7 +37,9 @@ public class AuthService {
     private long codeTtlMinutes;
 
     public RegisterInitResponse registerInit(RegisterInitRequest req) {
+        log.info("Registration initiated for email={}", req.email());
         if (userRepository.existsByEmail(req.email())) {
+            log.warn("Registration failed: email already in use email={}", req.email());
             throw new ApiException("Email already in use");
         }
 
@@ -58,12 +62,13 @@ public class AuthService {
 
         emailService.sendVerificationCode(u.getEmail(), code);
 
-        
         String token = jwtService.issueToken(u.getId(), u.getEmail());
+        log.info("User registered successfully userId={}, email={}", u.getId(), u.getEmail());
         return new RegisterInitResponse(token, u.getStatus(), "Verification code sent");
     }
 
     public RegisterStepResponse verifyEmail(Long userId, VerifyEmailRequest req) {
+        log.info("Email verification attempt userId={}", userId);
         EmailVerificationCode code = emailCodeRepository
                 .findTopByUserIdOrderByCreatedAtDesc(userId)
                 .orElseThrow(() -> new ApiException("Verification code not found"));
@@ -81,10 +86,12 @@ public class AuthService {
         u.setStatus(UserStatus.EMAIL_CONFIRMED);
         u = userRepository.save(u);
 
+        log.info("Email verified successfully userId={}", userId);
         return new RegisterStepResponse(u.getStatus());
     }
 
     public RegisterStepResponse setPassword(Long userId, SetPasswordRequest req) {
+        log.info("Password setup attempt userId={}", userId);
         if (!req.password().equals(req.confirmPassword())) {
             throw new ApiException("Passwords do not match");
         }
@@ -100,24 +107,35 @@ public class AuthService {
         u.setStatus(UserStatus.ACTIVE);
         u = userRepository.save(u);
 
+        log.info("Password set successfully, user is now ACTIVE userId={}", userId);
         return new RegisterStepResponse(u.getStatus());
     }
 
     public LoginResponse login(LoginRequest req) {
+        log.info("Login attempt email={}", req.email());
         User u = userRepository.findByEmail(req.email().toLowerCase())
-                .orElseThrow(() -> new ApiException("Invalid credentials"));
+                .orElseThrow(() -> {
+                    log.warn("Login failed: invalid credentials email={}", req.email());
+                    return new ApiException("Invalid credentials");
+                });
 
-        if (u.getPasswordHash() == null) throw new ApiException("Password not set");
+        if (u.getPasswordHash() == null) {
+            log.warn("Login failed: password not set userId={}", u.getId());
+            throw new ApiException("Password not set");
+        }
 
         if (!passwordEncoder.matches(req.password(), u.getPasswordHash())) {
+            log.warn("Login failed: wrong password userId={}", u.getId());
             throw new ApiException("Invalid credentials");
         }
 
         String jwt = jwtService.issueToken(u.getId(), u.getEmail());
+        log.info("Login successful userId={}, email={}", u.getId(), u.getEmail());
         return new LoginResponse(jwt, u.getStatus());
     }
 
     public LoginResponse loginGoogle(GoogleLoginRequest req) {
+        log.info("Google login attempt");
         GoogleIdTokenVerifier.GoogleUserInfo info = googleVerifier.verify(req.idToken());
 
         User u = userRepository.findByEmail(info.email()).orElseGet(() -> {
@@ -135,10 +153,12 @@ public class AuthService {
         }
 
         String jwt = jwtService.issueToken(u.getId(), u.getEmail());
+        log.info("Google login successful userId={}, email={}", u.getId(), u.getEmail());
         return new LoginResponse(jwt, u.getStatus());
     }
 
     public OAuthLoginResponse loginWithYandex(String code) {
+        log.info("Yandex login attempt");
         var token = yandexOAuthService.exchangeCode(code);
         var info = yandexOAuthService.fetchUserInfo(token.accessToken());
 
@@ -160,6 +180,7 @@ public class AuthService {
         boolean needsOnboarding = true;
 
         String jwt = jwtService.issueToken(u.getId(), u.getEmail());
+        log.info("Yandex login successful userId={}, email={}", u.getId(), u.getEmail());
         return new OAuthLoginResponse(jwt, u.getStatus(), needsOnboarding);
     }
 

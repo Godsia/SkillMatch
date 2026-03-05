@@ -5,6 +5,7 @@ import com.skillmatch.backend.user.dto.*;
 import com.skillmatch.backend.user.model.*;
 import com.skillmatch.backend.user.repo.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProfileService {
@@ -23,6 +25,7 @@ public class ProfileService {
     private final UserPreferencesRepository userPreferencesRepository;
 
     public MeResponse me(Long userId) {
+        log.info("Fetching profile userId={}", userId);
         User u = userRepository.findById(userId).orElseThrow(() -> new ApiException("User not found"));
 
         List<UserSkill> us = userSkillRepository.findAllByUserId(userId);
@@ -48,6 +51,7 @@ public class ProfileService {
 
     @Transactional
     public void setSkills(Long userId, SetSkillsRequest req) {
+        log.info("Setting skills userId={}", userId);
         User u = userRepository.findById(userId).orElseThrow(() -> new ApiException("User not found"));
 
         LinkedHashSet<Long> requestedSkillIds = new LinkedHashSet<>();
@@ -100,9 +104,11 @@ public class ProfileService {
             u.setStatus(UserStatus.EMAIL_CONFIRMED);
             userRepository.save(u);
         }
+        log.info("Skills updated userId={}, skillCount={}", userId, requestedSkillIds.size());
     }
 
     public void setPreferences(Long userId, SetPreferencesRequest req) {
+        log.info("Setting preferences userId={}", userId);
         User u = userRepository.findById(userId).orElseThrow(() -> new ApiException("User not found"));
 
         UserPreferences p = userPreferencesRepository.findById(userId).orElse(new UserPreferences());
@@ -116,5 +122,6 @@ public class ProfileService {
 
         u.setStatus(UserStatus.ACTIVE);
         userRepository.save(u);
+        log.info("Preferences updated, user is now ACTIVE userId={}", userId);
     }
 }

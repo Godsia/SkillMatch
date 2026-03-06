@@ -38,20 +38,33 @@ public class AuthService {
 
     public RegisterInitResponse registerInit(RegisterInitRequest req) {
         log.info("Registration initiated for email={}", req.email());
-        if (userRepository.existsByEmail(req.email())) {
-            log.warn("Registration failed: email already in use email={}", req.email());
-            throw new ApiException("Email already in use");
+
+        User u;
+        var existing = userRepository.findByEmail(req.email().toLowerCase());
+
+        if (existing.isPresent()) {
+            u = existing.get();
+            if (u.getStatus() != UserStatus.NEW) {
+                log.warn("Registration failed: email already in use email={}", req.email());
+                throw new ApiException("Email already in use");
+            }
+            // User started registration but never confirmed email — update and resend code
+            log.info("Re-registration for unconfirmed user userId={}, email={}", u.getId(), u.getEmail());
+            u.setFirstName(req.firstName());
+            u.setLastName(req.lastName());
+            u.setGender(req.gender());
+            u.setBirthDate(req.birthDate());
+            u = userRepository.save(u);
+        } else {
+            u = new User();
+            u.setEmail(req.email().toLowerCase());
+            u.setFirstName(req.firstName());
+            u.setLastName(req.lastName());
+            u.setGender(req.gender());
+            u.setBirthDate(req.birthDate());
+            u.setStatus(UserStatus.NEW);
+            u = userRepository.save(u);
         }
-
-        User u = new User();
-        u.setEmail(req.email().toLowerCase());
-        u.setFirstName(req.firstName());
-        u.setLastName(req.lastName());
-        u.setGender(req.gender());
-        u.setBirthDate(req.birthDate());
-        u.setStatus(UserStatus.NEW);
-
-        u = userRepository.save(u);
 
         String code = generate6Digits();
         EmailVerificationCode c = new EmailVerificationCode();

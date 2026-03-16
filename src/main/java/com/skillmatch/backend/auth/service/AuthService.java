@@ -48,7 +48,6 @@ public class AuthService {
                 log.warn("Registration failed: email already in use email={}", req.email());
                 throw new ApiException("Email already in use");
             }
-            // User started registration but never confirmed email — update and resend code
             log.info("Re-registration for unconfirmed user userId={}, email={}", u.getId(), u.getEmail());
             u.setFirstName(req.firstName());
             u.setLastName(req.lastName());

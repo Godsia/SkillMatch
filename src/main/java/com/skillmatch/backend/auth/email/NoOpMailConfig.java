@@ -18,7 +18,7 @@ import java.util.Properties;
 
 @Slf4j
 @Configuration
-@Profile("local")
+@Profile({"local", "test"})
 public class NoOpMailConfig {
 
     @Bean

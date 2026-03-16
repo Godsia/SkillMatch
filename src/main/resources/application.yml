@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/skillmatch}
-    username: ${DB_USERNAME:skillmatch}
-    password: ${DB_PASSWORD:skillmatch}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
   jpa:
     hibernate:
@@ -17,10 +17,10 @@ spring:
     locations: classpath:db/migration
 
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -31,12 +31,34 @@ spring:
 server:
   port: 8080
 
+logging:
+  level:
+    com.skillmatch: INFO
+    com.skillmatch.backend.security: DEBUG
+
+skillmatch:
+  hh-import:
+    enabled: true
+
 app:
   jwt:
     secret: ${JWT_SECRET}
     accessTokenTtlMinutes: 120
   verification:
     codeTtlMinutes: 10
-
   oauth:
-#    тут нужно ввести гугл/яндекс секрет id
+    google:
+      clientId: ${GOOGLE_CLIENT_ID}
+      clientsecret: ${GOOGLE_CLIENT_SECRET}
+    yandex:
+      clientId: ${YANDEX_CLIENT_ID}
+      clientSecret: ${YANDEX_CLIENT_SECRET}
+      redirectUri: ${YANDEX_REDIRECT_URI}
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health,info
+    endpoint:
+      health:
+        show-details: never

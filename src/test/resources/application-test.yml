@@ -1,0 +1,46 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/skillmatch_test
+    username: skillmatch
+    password: skillmatch
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  mail:
+    host: localhost
+    port: 3025
+    username: test
+    password: test
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+server:
+  port: 0
+
+skillmatch:
+  hh-import:
+    enabled: false
+
+app:
+  jwt:
+    secret: "THIS_IS_MY_SUPER_LONG_SECRET_KEY_32_CHARS_MIN"
+    accessTokenTtlMinutes: 120
+  verification:
+    codeTtlMinutes: 10
+  oauth:
+    google:
+      clientId: "test-google-client-id"
+      clientsecret: "test-google-client-secret"
+    yandex:
+      clientId: "test-yandex-client-id"
+      clientSecret: "test-yandex-client-secret"
+      redirectUri: "com.test.app:/oauth/yandex"

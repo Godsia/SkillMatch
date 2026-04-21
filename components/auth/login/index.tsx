@@ -2,11 +2,13 @@ import {View, Pressable, Text, TextInput, ScrollView, SafeAreaView} from 'react-
 import {useNavigation} from '@react-navigation/native';
 import {stylesRegister} from "../../../styles/register/style";
 import {useState} from "react";
+import {authApi} from "../../../services/api";
 
 export default function LoginPage() {
     const navigation = useNavigation();
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const [validationErrors, setValidationErrors] = useState<{
         email?: string;
         password?: string;
@@ -43,10 +45,28 @@ export default function LoginPage() {
         return Object.keys(errors).length === 0;
     };
 
-    const handleLogin = () => {
-        if (validateLoginForm()) {
-            console.log('Вход:', { email, password });
-            // navigation.navigate('NextScreen' as never);
+    const handleLogin = async () => {
+        if (!validateLoginForm()) {
+            return;
+        }
+
+        setIsLoading(true);
+        setValidationErrors({});
+        try {
+            await authApi.login({
+                email: email,
+                password: password,
+            });
+            navigation.navigate('Home' as never);
+        } catch (error: any) {
+            console.error('Ошибка входа:', error);
+            const message = "Неверные данные";
+            setValidationErrors({
+                email: message,
+                password: message,
+            });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -78,8 +98,8 @@ export default function LoginPage() {
                             value={email}
                             onChangeText={(text) => {
                                 setEmail(text);
-                                if (validationErrors.email) {
-                                    setValidationErrors({ ...validationErrors, email: undefined });
+                                if (validationErrors.email || validationErrors.password) {
+                                    setValidationErrors({});
                                 }
                             }}
                             placeholder="example@mail.com"
@@ -103,8 +123,8 @@ export default function LoginPage() {
                             value={password}
                             onChangeText={(text) => {
                                 setPassword(text);
-                                if (validationErrors.password) {
-                                    setValidationErrors({ ...validationErrors, password: undefined });
+                                if (validationErrors.email || validationErrors.password) {
+                                    setValidationErrors({});
                                 }
                             }}
                             placeholder="Введите пароль"
@@ -115,12 +135,21 @@ export default function LoginPage() {
                             <Text style={stylesRegister.errorText}>{validationErrors.password}</Text>
                         )}
                     </View>
-                </View>
+        </View>
 
                 {/* Кнопка Войти */}
-                <Pressable style={stylesRegister.continueButton} onPress={handleLogin}>
-                    <Text style={stylesRegister.continueButtonText}>Войти</Text>
-                    <Text style={{ color: '#FFFFFF', fontSize: 16 }}>→</Text>
+                <Pressable 
+                    style={[
+                        stylesRegister.continueButton,
+                        isLoading && { opacity: 0.6 }
+                    ]} 
+                    onPress={handleLogin}
+                    disabled={isLoading}
+                >
+                    <Text style={stylesRegister.continueButtonText}>
+                        {isLoading ? 'Загрузка...' : 'Войти'}
+                    </Text>
+                    {!isLoading && <Text style={{ color: '#FFFFFF', fontSize: 16 }}>→</Text>}
                 </Pressable>
             </ScrollView>
         </SafeAreaView>

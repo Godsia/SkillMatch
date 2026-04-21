@@ -1,6 +1,7 @@
-import {useEffect} from "react";
+import {useEffect, useState, useCallback} from "react";
 import {Alert, Pressable, SafeAreaView, ScrollView, Text, TextInput, View} from "react-native";
 import {stylesVerification} from "../../../../styles/register/style";
+import {authApi} from "../../../../services/api";
 
 interface VerificationPageProps {
     verificationCode: string;
@@ -15,21 +16,40 @@ export default function VerificationPage({
     handleGoBack,
     onVerificationSuccess
 }: VerificationPageProps) {
-    const expectedCode = "123123"; // пример
+    const [isVerifying, setIsVerifying] = useState(false);
+
+    const handleVerifyCode = useCallback(async (code: string) => {
+        setIsVerifying(true);
+        try {
+            const response = await authApi.verifyEmail({
+                code: code,
+            });
+            console.log('Верификация успешна, userStatus:', response.userStatus);
+            onVerificationSuccess();
+        } catch (error: any) {
+            console.error('Ошибка верификации:', error);
+            Alert.alert(
+                "Неверный код",
+                error.response?.data?.message || "Код верификации неверен. Попробуйте еще раз."
+            );
+            setVerificationCode("");
+        } finally {
+            setIsVerifying(false);
+        }
+    }, [onVerificationSuccess, setVerificationCode]);
 
     useEffect(() => {
         const code = verificationCode.replace(/\D/g, "");
 
         // ждём пока введут 6 цифр
-        if (code.length !== 6) return;
-
-        if (code === expectedCode) {
-            onVerificationSuccess();
-        } else {
-            Alert.alert("Неверный код");
-            setVerificationCode("");
+        if (code.length !== 6) {
+            return;
         }
-    }, [verificationCode, expectedCode, onVerificationSuccess, setVerificationCode]);
+
+        if (!isVerifying) {
+            handleVerifyCode(code);
+        }
+    }, [verificationCode, isVerifying, handleVerifyCode]);
 
     const handleResend = () => {
         // TODO: Реализовать повторную отправку кода
@@ -48,7 +68,7 @@ export default function VerificationPage({
                 showsVerticalScrollIndicator={false}
             >
                 <Text style={stylesVerification.title}>
-                    Введите Код Из Письма
+                    Введите код из письма
                 </Text>
                 <View style={stylesVerification.inputGroup}>
                     <Text style={stylesVerification.label}>Код</Text>

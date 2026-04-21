@@ -1,5 +1,7 @@
-import {View, Pressable, Text, TextInput, ScrollView, SafeAreaView} from 'react-native';
+import {useState} from 'react';
+import {View, Pressable, Text, TextInput, ScrollView, SafeAreaView, Alert} from 'react-native';
 import {stylesPassword} from "../../../../styles/register/style";
+import {authApi} from "../../../../services/api";
 
 interface PasswordPageProps {
     password: string;
@@ -22,6 +24,33 @@ export default function PasswordPage({
     handleGoBack,
     isFormValid
 }: PasswordPageProps) {
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handlePasswordSubmit = async () => {
+        if (!isFormValid) {
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // Устанавливаем пароль
+            const response = await authApi.setPassword({
+                password: password,
+                confirmPassword: confirmPassword,
+            });
+
+            console.log('Пароль успешно установлен, userStatus:', response.userStatus);
+            handleContinue();
+        } catch (error: any) {
+            console.error('Ошибка установки пароля:', error);
+            Alert.alert(
+                "Ошибка",
+                error.response?.data?.message || "Не удалось установить пароль. Попробуйте еще раз."
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    };
     return (
         <SafeAreaView style={stylesPassword.container}>
             <Pressable 
@@ -73,13 +102,15 @@ export default function PasswordPage({
                 <Pressable 
                     style={[
                         stylesPassword.continueButton,
-                        !isFormValid && stylesPassword.continueButtonDisabled
+                        (!isFormValid || isLoading) && stylesPassword.continueButtonDisabled
                     ]} 
-                    onPress={handleContinue}
-                    disabled={!isFormValid}
+                    onPress={handlePasswordSubmit}
+                    disabled={!isFormValid || isLoading}
                 >
-                    <Text style={stylesPassword.continueButtonText}>Продолжить</Text>
-                    <Text style={{ color: '#FFFFFF', fontSize: 16 }}>→</Text>
+                    <Text style={stylesPassword.continueButtonText}>
+                        {isLoading ? 'Загрузка...' : 'Продолжить'}
+                    </Text>
+                    {!isLoading && <Text style={{ color: '#FFFFFF', fontSize: 16 }}>→</Text>}
                 </Pressable>
             </ScrollView>
         </SafeAreaView>

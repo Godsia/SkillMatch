@@ -1,17 +1,13 @@
-import {View, Text, Pressable, ImageBackground} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import React from 'react';
+import { View, Text, Pressable, ImageBackground, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import {stylesRedirect} from "../../../../styles/register/style";
 
 export default function RedirectionPage() {
     const navigation = useNavigation();
 
-    const handlePressRegistr  = () => {
-        navigation.navigate('Registration' as never);
-    };
-    const handlePressLogin  = () => {
-        navigation.navigate('Authorization' as never);
-    };
-
+    const handlePressRegistr = () => navigation.navigate('Registration' as never);
+    const handlePressLogin = () => navigation.navigate('Authorization' as never);
 
     return (
         <View style={stylesRedirect.container}>
@@ -21,48 +17,47 @@ export default function RedirectionPage() {
                 resizeMode="cover"
             >
                 <View style={stylesRedirect.content}>
-                    {/* Заголовок */}
                     <Text style={stylesRedirect.title}>
                         Выбери Свой Путь{'\n'}Мечты В Дизайне
                     </Text>
 
-                    {/* Подзаголовок */}
-                    <Text style={stylesRedirect.subtitle}>
+{/*                    <Text style={stylesRedirect.subtitle}>
                         Начните с регистрации с помощью:
-                    </Text>
+                    </Text>*/}
 
-                    {/* Контейнер для кнопок */}
                     <View style={stylesRedirect.buttonsContainer}>
-                        {/* Кнопка HeadHunter */}
-                        <Pressable style={stylesRedirect.button}>
-                            <View style={stylesRedirect.iconPlaceholder} />
-                            <Text style={stylesRedirect.buttonText}>HeadHunter</Text>
-                        </Pressable>
-
-                        {/* Кнопка Google */}
-                        <Pressable style={stylesRedirect.button}>
-                            <View style={stylesRedirect.iconPlaceholder} />
-                            <Text style={stylesRedirect.buttonText}>Google</Text>
-                        </Pressable>
-
-                        {/* Кнопка Yandex */}
-                        <Pressable style={stylesRedirect.button}>
-                            <View style={stylesRedirect.iconPlaceholder} />
-                            <Text style={stylesRedirect.buttonText}>Yandex</Text>
-                        </Pressable>
-
-                        {/* Кнопка Ручной регистрации */}
-                        <Pressable style={stylesRedirect.manualButton} onPress={handlePressRegistr}>
-                            <View style={stylesRedirect.iconPlaceholder} />
-                            <Text style={stylesRedirect.manualButtonText}>
-                                Зарегистрироваться Вручную
+                        {/* Primary */}
+                        <Pressable
+                            style={({ pressed }) => [
+                                stylesRedirect.actionButton,
+                                stylesRedirect.actionButtonPrimary,
+                                pressed && stylesRedirect.pressed,
+                            ]}
+                            onPress={handlePressRegistr}
+                        >
+                            <View style={stylesRedirect.iconCircle}>
+                                <Text style={stylesRedirect.iconArrow}>→</Text>
+                            </View>
+                            <Text style={stylesRedirect.actionText}>
+                                Зарегистрироваться{'\n'}Вручную
                             </Text>
                         </Pressable>
-                        <Pressable style={stylesRedirect.manualButton} onPress={handlePressLogin}>
-                            <View style={stylesRedirect.iconPlaceholder} />
-                            <Text style={stylesRedirect.manualButtonText}>
-                                Авторизация
-                            </Text>
+
+                        <Text style={stylesRedirect.or}>или</Text>
+
+                        {/* Secondary */}
+                        <Pressable
+                            style={({ pressed }) => [
+                                stylesRedirect.actionButton,
+                                stylesRedirect.actionButtonSecondary,
+                                pressed && stylesRedirect.pressed,
+                            ]}
+                            onPress={handlePressLogin}
+                        >
+                            <View style={stylesRedirect.iconCircle}>
+                                <Text style={stylesRedirect.iconArrow}>→</Text>
+                            </View>
+                            <Text style={stylesRedirect.actionText}>Войти</Text>
                         </Pressable>
                     </View>
                 </View>

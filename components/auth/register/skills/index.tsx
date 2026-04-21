@@ -5,14 +5,16 @@ import {useState} from "react";
 
 interface SkillsPageProps {
     handleGoBack: () => void;
+    handleSkip: () => void;
     handleContinue: () => void;
     selectedSkills: string[];
     setSelectedSkills: (skills: string[]) => void;
     customSkills: Array<{id: string, name: string}>;
     setCustomSkills: (skills: Array<{id: string, name: string}>) => void;
+    isLoading?: boolean;
 }
 
-export default function SkillsPage({ handleGoBack, handleContinue, selectedSkills, setSelectedSkills, customSkills, setCustomSkills }: SkillsPageProps) {
+export default function SkillsPage({ handleGoBack, handleSkip, handleContinue, selectedSkills, setSelectedSkills, customSkills, setCustomSkills, isLoading = false }: SkillsPageProps) {
     const [customSkillInput, setCustomSkillInput] = useState<string>("");
 
     const toggleSkill = (skillId: string) => {
@@ -30,13 +32,13 @@ export default function SkillsPage({ handleGoBack, handleContinue, selectedSkill
                 id: newSkillId,
                 name: customSkillInput.trim()
             };
-            setCustomSkills([...customSkills, newSkill]);
-            setSelectedSkills([...selectedSkills, newSkillId]);
+            setCustomSkills([newSkill, ...customSkills]);
+            setSelectedSkills([newSkillId, ...selectedSkills]);
             setCustomSkillInput("");
         }
     };
 
-    const allSkillsWithCustom = [...allSkills, ...customSkills];
+    const allSkillsWithCustom = [...customSkills, ...allSkills];
 
     return (
         <SafeAreaView style={stylesSkillsChoose.container}>
@@ -48,18 +50,21 @@ export default function SkillsPage({ handleGoBack, handleContinue, selectedSkill
                     <Text style={stylesSkillsChoose.backButtonText}>←</Text>
                 </Pressable>
                 <Pressable 
-                    style={stylesSkillsChoose.continueButton}
-                    onPress={handleContinue}
+                    style={[
+                        stylesSkillsChoose.skipButton,
+                        isLoading && { opacity: 0.6 }
+                    ]}
+                    onPress={handleSkip}
+                    disabled={isLoading}
                 >
-                    <Text style={stylesSkillsChoose.continueButtonText}>Пропустить</Text>
+                    <Text style={stylesSkillsChoose.skipButtonText}>Пропустить</Text>
                 </Pressable>
-
             </View>
             <ScrollView
                 contentContainerStyle={stylesSkillsChoose.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={stylesSkillsChoose.title}>Ваши Скиллы</Text>
+                <Text style={stylesSkillsChoose.title}>Ваши скиллы</Text>
                 <Text style={stylesSkillsChoose.description}>
                     Отметьте свои навыки, и мы найдём для вас лучшее предложение!
                 </Text>
@@ -76,7 +81,7 @@ export default function SkillsPage({ handleGoBack, handleContinue, selectedSkill
                             onSubmitEditing={handleAddCustomSkill}
                         />
                         <Pressable onPress={handleAddCustomSkill}>
-                            <Text style={stylesSkillsChoose.searchIcon}>🔍</Text>
+                            <Text style={stylesSkillsChoose.searchIcon}>+</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -105,6 +110,21 @@ export default function SkillsPage({ handleGoBack, handleContinue, selectedSkill
                         );
                     })}
                 </View>
+
+                {/* Кнопка Продолжить в конце страницы */}
+                <Pressable 
+                    style={[
+                        stylesSkillsChoose.continueButtonBottom,
+                        isLoading && { opacity: 0.6 }
+                    ]}
+                    onPress={handleContinue}
+                    disabled={isLoading}
+                >
+                    <Text style={stylesSkillsChoose.continueButtonText}>
+                        {isLoading ? 'Загрузка...' : 'Продолжить'}
+                    </Text>
+                    {!isLoading && <Text style={stylesSkillsChoose.continueButtonArrow}>→</Text>}
+                </Pressable>
             </ScrollView>
         </SafeAreaView>
     );

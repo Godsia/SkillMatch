@@ -1,4 +1,4 @@
-import { ImageBackground, Image, View, Pressable, Text } from 'react-native';
+import { ImageBackground, View, Pressable, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { headStyle } from "../../styles/register/style";
 
@@ -17,14 +17,11 @@ export default function HeadPage() {
 
     return (
         <ImageBackground
-            source={require('../../images/backgroundauth.jpg')}
+            source={require('../../assets/logo_main.jpg')}
             style={headStyle.background}
             resizeMode="cover"
         >
-            <Image
-                source={require('../../images/logo.png')}
-                style={headStyle.logo}
-            />
+            <View style={headStyle.logo} />
             <View style={headStyle.buttonContainer}>
                 <Pressable 
                     style={headStyle.button} 

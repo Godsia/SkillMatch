@@ -1,4 +1,16 @@
-import {View, Pressable, Text, TextInput, ScrollView, SafeAreaView, Modal} from 'react-native';
+import {useEffect, useRef, useState} from 'react';
+import {
+    View,
+    Pressable,
+    Text,
+    TextInput,
+    ScrollView,
+    SafeAreaView,
+    Modal,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+} from 'react-native';
 import { stylesRegister } from "../../../../styles/register/style";
 
 interface RegisterMainPageProps {
@@ -35,6 +47,13 @@ interface RegisterMainPageProps {
     renderCalendar: () => (number | null)[];
     handleContinue: () => void;
     monthNames: string[];
+    isLoading?: boolean;
+    showYearDropdown: boolean;
+    setShowYearDropdown: (value: boolean) => void;
+    generateYears: () => number[];
+    handleYearSelect: (year: number) => void;
+    showGenderDropdown: boolean;
+    setShowGenderDropdown: (value: boolean) => void;
 }
 
 export default function RegisterMainPage({
@@ -64,22 +83,72 @@ export default function RegisterMainPage({
     handleSaveDate,
     renderCalendar,
     handleContinue,
-    monthNames
+    monthNames,
+    isLoading = false,
+    showYearDropdown,
+    setShowYearDropdown,
+    generateYears,
+    handleYearSelect,
+    showGenderDropdown,
+    setShowGenderDropdown
 }: RegisterMainPageProps) {
+    const scrollRef = useRef<ScrollView>(null);
+    const [keyboardBottomInset, setKeyboardBottomInset] = useState(0);
+
+    useEffect(() => {
+        const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+        const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+        const onShow = (e: {endCoordinates: {height: number}}) =>
+            setKeyboardBottomInset(e.endCoordinates.height);
+        const onHide = () => setKeyboardBottomInset(0);
+        const showSub = Keyboard.addListener(showEvent, onShow);
+        const hideSub = Keyboard.addListener(hideEvent, onHide);
+        return () => {
+            showSub.remove();
+            hideSub.remove();
+        };
+    }, []);
+
+    const scrollEmailIntoView = () => {
+        requestAnimationFrame(() => {
+            setTimeout(() => scrollRef.current?.scrollToEnd({animated: true}), 120);
+        });
+    };
+
     return (
         <SafeAreaView style={stylesRegister.container}>
+            <KeyboardAvoidingView
+                style={{flex: 1}}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+            >
+            <Pressable 
+                style={{ flex: 1 }}
+                onPress={() => setShowGenderDropdown(false)}
+            >
             <Pressable 
                 style={stylesRegister.backButton} 
-                onPress={handleGoBack}
+                onPress={(e) => {
+                    e.stopPropagation();
+                    handleGoBack();
+                }}
             >
                 <Text style={stylesRegister.backButtonText}>←</Text>
             </Pressable>
-            <ScrollView 
-                contentContainerStyle={stylesRegister.scrollContent}
+            <ScrollView
+                ref={scrollRef}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={[
+                    stylesRegister.scrollContent,
+                    Platform.OS === 'android' &&
+                        keyboardBottomInset > 0 && {
+                            paddingBottom: keyboardBottomInset + 40,
+                        },
+                ]}
                 showsVerticalScrollIndicator={false}
             >
                 <Text style={stylesRegister.title}>
-                    Введите Данные О Себе
+                    Введите данные о себе
                 </Text>
 
                 <View style={stylesRegister.formContainer}>
@@ -95,6 +164,9 @@ export default function RegisterMainPage({
                             onChangeText={setName}
                             placeholder="Введите имя"
                             placeholderTextColor="#999999"
+                            autoCapitalize="words"
+                            textContentType="givenName"
+                            autoCorrect={false}
                         />
                         {validationErrors.name && (
                             <Text style={stylesRegister.errorText}>{validationErrors.name}</Text>
@@ -113,6 +185,9 @@ export default function RegisterMainPage({
                             onChangeText={setSurname}
                             placeholder="Введите фамилию"
                             placeholderTextColor="#999999"
+                            autoCapitalize="words"
+                            textContentType="familyName"
+                            autoCorrect={false}
                         />
                         {validationErrors.surname && (
                             <Text style={stylesRegister.errorText}>{validationErrors.surname}</Text>
@@ -122,16 +197,69 @@ export default function RegisterMainPage({
                     {/* Пол */}
                     <View style={stylesRegister.inputGroup}>
                         <Text style={stylesRegister.label}>Пол</Text>
-                        <TextInput
-                            style={[
-                                stylesRegister.input,
-                                validationErrors.gender && stylesRegister.inputError
-                            ]}
-                            value={gender}
-                            onChangeText={setGender}
-                            placeholder="Введите пол"
-                            placeholderTextColor="#999999"
-                        />
+                        <View style={stylesRegister.genderDropdownContainer}>
+                            <Pressable
+                                style={[
+                                    stylesRegister.genderDropdownButton,
+                                    validationErrors.gender && stylesRegister.inputError
+                                ]}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    setShowGenderDropdown(!showGenderDropdown);
+                                }}
+                            >
+                                <Text style={[
+                                    stylesRegister.genderDropdownButtonText,
+                                    !gender && stylesRegister.genderDropdownPlaceholder
+                                ]}>
+                                    {gender || "Выберите пол"}
+                                </Text>
+                                <Text style={stylesRegister.genderDropdownArrow}>
+                                    {showGenderDropdown ? '▲' : '▼'}
+                                </Text>
+                            </Pressable>
+                            {showGenderDropdown && (
+                                <Pressable 
+                                    style={stylesRegister.genderDropdownList}
+                                    onPress={(e) => e.stopPropagation()}
+                                >
+                                    <Pressable
+                                        style={[
+                                            stylesRegister.genderOption,
+                                            gender === 'Мужской' && stylesRegister.genderOptionSelected
+                                        ]}
+                                        onPress={() => {
+                                            setGender('Мужской');
+                                            setShowGenderDropdown(false);
+                                        }}
+                                    >
+                                        <Text style={[
+                                            stylesRegister.genderOptionText,
+                                            gender === 'Мужской' && stylesRegister.genderOptionTextSelected
+                                        ]}>
+                                            Мужской
+                                        </Text>
+                                    </Pressable>
+                                    <Pressable
+                                        style={[
+                                            stylesRegister.genderOption,
+                                            gender === 'Женский' && stylesRegister.genderOptionSelected
+                                        ]}
+                                        onPress={() => {
+                                            setGender('Женский');
+                                            setShowGenderDropdown(false);
+                                        }}
+                                    >
+                                        <Text style={[
+                                            stylesRegister.genderOptionText,
+                                            gender === 'Женский' && stylesRegister.genderOptionTextSelected
+                                        ]}>
+                                            Женский
+                                        </Text>
+                                    </Pressable>
+                                </Pressable>
+                            )}
+                        </View>
                         {validationErrors.gender && (
                             <Text style={stylesRegister.errorText}>{validationErrors.gender}</Text>
                         )}
@@ -139,6 +267,7 @@ export default function RegisterMainPage({
 
                     {/* Дата рождения */}
                     <View style={stylesRegister.inputGroup}>
+                        <Text style={stylesRegister.label}>Дата рождения</Text>
                         <Pressable 
                             style={[
                                 stylesRegister.dateButton,
@@ -169,6 +298,7 @@ export default function RegisterMainPage({
                             placeholderTextColor="#999999"
                             keyboardType="email-address"
                             autoCapitalize="none"
+                            onFocus={scrollEmailIntoView}
                         />
                         {validationErrors.email && (
                             <Text style={stylesRegister.errorText}>{validationErrors.email}</Text>
@@ -177,40 +307,68 @@ export default function RegisterMainPage({
                 </View>
 
                 {/* Кнопка Продолжить */}
-                <Pressable style={stylesRegister.continueButton} onPress={handleContinue}>
-                    <Text style={stylesRegister.continueButtonText}>Продолжить</Text>
-                    <Text style={{ color: '#FFFFFF', fontSize: 16 }}>→</Text>
+                <Pressable 
+                    style={[
+                        stylesRegister.continueButton,
+                        isLoading && { opacity: 0.6 }
+                    ]} 
+                    onPress={handleContinue}
+                    disabled={isLoading}
+                >
+                    <Text style={stylesRegister.continueButtonText}>
+                        {isLoading ? 'Загрузка...' : 'Продолжить'}
+                    </Text>
+                    {!isLoading && <Text style={{ color: '#FFFFFF', fontSize: 16 }}>→</Text>}
                 </Pressable>
             </ScrollView>
+            </Pressable>
+            </KeyboardAvoidingView>
 
+            {/* Модальное окно выбора даты */}
             {/* Модальное окно выбора даты */}
             <Modal
                 visible={showDatePicker}
-                transparent={true}
-                animationType="slide"
-                onRequestClose={() => setShowDatePicker(false)}
+                transparent
+                animationType="fade"
+                onRequestClose={() => {
+                    setShowDatePicker(false);
+                    setShowYearDropdown(false);
+                }}
             >
-                <Pressable 
+                {/* затемнение + закрытие по тапу вне */}
+                <Pressable
                     style={stylesRegister.modalOverlay}
-                    onPress={() => setShowDatePicker(false)}
+                    onPress={() => {
+                        setShowDatePicker(false);
+                        setShowYearDropdown(false);
+                    }}
                 >
-                    <Pressable 
+                    {/* контент sheet, stopPropagation чтобы не закрывать */}
+                    <Pressable
                         style={stylesRegister.modalContent}
                         onPress={(e) => e.stopPropagation()}
                     >
-                        <Text style={stylesRegister.modalTitle}>День рождения</Text>
-                        
-                        {/* Выбор года и месяца */}
-                        <View style={stylesRegister.dateSelector}>
-                            <Pressable onPress={handlePrevMonth}>
-                                <Text style={stylesRegister.arrowButton}>←</Text>
+                        {/* Header: стрелки + год (кликабельный) + месяц */}
+                        <View style={stylesRegister.sheetHeader}>
+                            <Pressable onPress={handlePrevMonth} style={stylesRegister.chevronBtn}>
+                                <Text style={stylesRegister.chevron}>‹</Text>
                             </Pressable>
-                            <View style={stylesRegister.dateDisplay}>
-                                <Text style={stylesRegister.yearText}>{selectedYear}</Text>
+
+                            <View style={stylesRegister.centerHeader}>
+                                <Text style={stylesRegister.modalTitleSmall}>День рождения</Text>
+
+                                <Pressable
+                                    onPress={() => setShowYearDropdown(!showYearDropdown)}
+                                    style={stylesRegister.yearTapArea}
+                                >
+                                    <Text style={stylesRegister.yearBig}>{selectedYear}</Text>
+                                </Pressable>
+
                                 <Text style={stylesRegister.monthText}>{monthNames[selectedMonth]}</Text>
                             </View>
-                            <Pressable onPress={handleNextMonth}>
-                                <Text style={stylesRegister.arrowButton}>→</Text>
+
+                            <Pressable onPress={handleNextMonth} style={stylesRegister.chevronBtn}>
+                                <Text style={stylesRegister.chevron}>›</Text>
                             </Pressable>
                         </View>
 
@@ -223,15 +381,17 @@ export default function RegisterMainPage({
                                         style={[
                                             stylesRegister.calendarDay,
                                             day === selectedDay && stylesRegister.calendarDaySelected,
-                                            day === null && stylesRegister.calendarDayEmpty
+                                            day === null && stylesRegister.calendarDayEmpty,
                                         ]}
                                         onPress={() => day && setSelectedDay(day)}
                                         disabled={day === null}
                                     >
-                                        <Text style={[
-                                            stylesRegister.calendarDayText,
-                                            day === selectedDay && stylesRegister.calendarDayTextSelected
-                                        ]}>
+                                        <Text
+                                            style={[
+                                                stylesRegister.calendarDayText,
+                                                day === selectedDay && stylesRegister.calendarDayTextSelected,
+                                            ]}
+                                        >
                                             {day || ''}
                                         </Text>
                                     </Pressable>
@@ -243,6 +403,41 @@ export default function RegisterMainPage({
                         <Pressable style={stylesRegister.saveButton} onPress={handleSaveDate}>
                             <Text style={stylesRegister.saveButtonText}>Сохранить</Text>
                         </Pressable>
+
+                        {/* Dropdown лет поверх календаря (как на правом мокапе) */}
+                        {showYearDropdown && (
+                            <Pressable
+                                style={stylesRegister.yearDropdownOverlay}
+                                onPress={() => setShowYearDropdown(false)}
+                            >
+                                <Pressable
+                                    style={stylesRegister.yearDropdownCard}
+                                    onPress={(e) => e.stopPropagation()}
+                                >
+                                    <ScrollView style={{ maxHeight: 260 }} nestedScrollEnabled>
+                                        {generateYears().map((year) => (
+                                            <Pressable
+                                                key={year}
+                                                style={[
+                                                    stylesRegister.yearRow,
+                                                    year === selectedYear && stylesRegister.yearRowSelected,
+                                                ]}
+                                                onPress={() => handleYearSelect(year)}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        stylesRegister.yearRowText,
+                                                        year === selectedYear && stylesRegister.yearRowTextSelected,
+                                                    ]}
+                                                >
+                                                    {year}
+                                                </Text>
+                                            </Pressable>
+                                        ))}
+                                    </ScrollView>
+                                </Pressable>
+                            </Pressable>
+                        )}
                     </Pressable>
                 </Pressable>
             </Modal>

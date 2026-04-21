@@ -7,13 +7,14 @@ interface ExpectationsPageProps {
     handleGoBack: () => void;
     handleContinue: () => void;
     workFormation: string[];
-    experience: string;
+    experience: string[];
     salary: number[];
     salaryPeriod: string;
     setWorkFormation: (value: string[]) => void;
-    setExperience: (value: string) => void;
+    setExperience: (value: string[]) => void;
     setSalary: (value: number[]) => void;
     setSalaryPeriod: (value: string) => void;
+    isLoading?: boolean;
 }
 
 const salaryPeriods = [
@@ -34,7 +35,8 @@ export default function ExpectationsPage({
     setWorkFormation,
     setExperience,
     setSalary,
-    setSalaryPeriod
+    setSalaryPeriod,
+    isLoading = false
 }: ExpectationsPageProps) {
     const [showPeriodDropdown, setShowPeriodDropdown] = useState<boolean>(false);
     const toggleWorkFormat = (formatId: string) => {
@@ -45,8 +47,12 @@ export default function ExpectationsPage({
         }
     };
 
-    const handleExperienceChange = (experienceId: string) => {
-        setExperience(experienceId);
+    const toggleExperience = (experienceId: string) => {
+        if (experience.includes(experienceId)) {
+            setExperience(experience.filter((id) => id !== experienceId));
+        } else {
+            setExperience([...experience, experienceId]);
+        }
     };
 
     const handleSalaryFromChange = (text: string) => {
@@ -79,10 +85,16 @@ export default function ExpectationsPage({
                     <Text style={stylesExpectations.backButtonText}>←</Text>
                 </Pressable>
                 <Pressable
-                    style={stylesExpectations.continueButton}
+                    style={[
+                        stylesExpectations.continueButton,
+                        isLoading && { opacity: 0.6 }
+                    ]}
                     onPress={handleContinue}
+                    disabled={isLoading}
                 >
-                    <Text style={stylesExpectations.continueButtonText}>Пропустить</Text>
+                    <Text style={stylesExpectations.continueButtonText}>
+                        {isLoading ? 'Загрузка...' : 'Пропустить'}
+                    </Text>
                 </Pressable>
             </View>
             <ScrollView
@@ -91,7 +103,7 @@ export default function ExpectationsPage({
                 nestedScrollEnabled={true}
                 removeClippedSubviews={false}
             >
-                <Text style={stylesExpectations.title}>Ваши Ожидания</Text>
+                <Text style={stylesExpectations.title}>Ваши ожидания</Text>
                 <Text style={stylesExpectations.description}>
                     Расскажите о своих ожиданиях, мы подберем подходящие вакансии!
                 </Text>
@@ -127,7 +139,7 @@ export default function ExpectationsPage({
                     <Text style={stylesExpectations.sectionTitle}>Уровень и опыт</Text>
                     <View style={stylesExpectations.formatsContainer}>
                         {allExperience.map((exp) => {
-                            const isSelected = experience === exp.id;
+                            const isSelected = experience.includes(exp.id);
                             return (
                                 <Pressable
                                     key={exp.id}
@@ -135,7 +147,7 @@ export default function ExpectationsPage({
                                         stylesExpectations.formatButton,
                                         isSelected && stylesExpectations.formatButtonSelected
                                     ]}
-                                    onPress={() => handleExperienceChange(exp.id)}
+                                    onPress={() => toggleExperience(exp.id)}
                                 >
                                     <Text style={[
                                         stylesExpectations.formatText,
@@ -221,6 +233,29 @@ export default function ExpectationsPage({
                         </View>
                     </View>
                 </View>
+
+                {/* Кнопка Продолжить в конце страницы */}
+                <Pressable 
+                    style={[
+                        stylesExpectations.continueButtonBottom,
+                        isLoading && { opacity: 0.6 }
+                    ]}
+                    onPress={handleContinue}
+                    disabled={isLoading}
+                >
+                    <Text style={{
+                        color: '#FFFFFF',
+                        fontSize: 16,
+                        fontWeight: 'bold',
+                        marginRight: 8,
+                    }}>
+                        {isLoading ? 'Загрузка...' : 'Завершить'}
+                    </Text>
+                    {!isLoading && <Text style={{
+                        color: '#FFFFFF',
+                        fontSize: 16,
+                    }}>→</Text>}
+                </Pressable>
             </ScrollView>
         </SafeAreaView>
     );

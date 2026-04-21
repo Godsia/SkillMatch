@@ -55,92 +55,106 @@ export const headStyle = StyleSheet.create({
 });
 
 export const stylesRedirect = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    background: {
-        flex: 1,
-    },
+    container: { flex: 1 },
+    background: { flex: 1 },
+
     content: {
         flex: 1,
         paddingHorizontal: 20,
-        justifyContent: 'center',
         alignItems: 'center',
+        justifyContent: 'space-between', // вместо center
+        paddingTop: 120,                 // отступ сверху (заголовок)
+        paddingBottom: 60,
+        marginTop: 120,             // отступ снизу (кнопки)
     },
+
     title: {
-        fontSize: 28,
-        fontWeight: 'bold',
+        fontSize: 30,
+        fontWeight: '800',
         textAlign: 'center',
-        marginBottom: 20,
-        top: '5%',
-        color: '#ffffff',
+        color: '#fff',
+        marginBottom: 18,
     },
+
     subtitle: {
         fontSize: 16,
         textAlign: 'center',
-        marginBottom: 30,
-        color: '#ffffff',
+        color: '#fff',
         opacity: 0.9,
-        top: '10%',
+        marginBottom: 18,
     },
+
     buttonsContainer: {
         width: '100%',
         alignItems: 'center',
-        gap: 15,
-        top: '8%',
+        marginTop: 60,
     },
-    button: {
-        width: '100%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 50,
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#ddd',
-    },
-    manualButton: {
-        width: '100%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        borderRadius: 50,
-        backgroundColor: '#6B46C1',
-    },
-    iconPlaceholder: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#ccc',
-        marginRight: 15,
-    },
-    buttonText: {
-        fontSize: 16,
-        color: '#000',
-    },
-    manualButtonText: {
-        fontSize: 16,
+
+    or: {
+        marginVertical: 14,
         color: '#fff',
-        flexShrink: 1,
+        opacity: 0.9,
     },
-    backButton: {
-        position: 'absolute',
-        top: 50,
-        left: 20,
-        zIndex: 10,
-        backgroundColor: 'rgba(255, 255, 255, 0.3)',
-        borderRadius: 25,
-        width: 50,
-        height: 50,
-        justifyContent: 'center',
+
+    actionButton: {
+        width: '92%',
+        minHeight: 64,
+        borderRadius: 28,
+        paddingHorizontal: 18,
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center', // важное: чтобы текст был по центру "плашки"
+        gap: 14,
+
+        // тень как на мокапе
+        shadowColor: '#000',
+        shadowOpacity: 0.22,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 8,
     },
-    backButtonText: {
-        color: '#ffffff',
-        fontSize: 24,
-        fontWeight: 'bold',
+
+    actionButtonPrimary: {
+        backgroundColor: 'rgba(62, 49, 132, 0.95)',
+    },
+
+    actionButtonSecondary: {
+        backgroundColor: 'rgba(55, 45, 120, 0.88)',
+    },
+
+    iconCircle: {
+        position: 'absolute',
+        left: 16,
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.55)',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+    },
+
+    iconArrow: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '800',
+        marginTop: -1,
+    },
+
+    actionText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '700',
+        textAlign: 'center',
+        lineHeight: 18,
+        paddingLeft: 18, // чуть компенсируем круг слева, чтобы центр выглядел как в дизайне
+        paddingRight: 10,
+    },
+
+    pressed: {
+        transform: [{ scale: 0.99 }],
+        opacity: 0.95,
     },
 });
 
@@ -149,105 +163,14 @@ export const stylesRegister = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
     },
-    background: {
-        flex: 1,
-    },
+
     scrollContent: {
         flexGrow: 1,
         paddingHorizontal: 20,
         paddingTop: 60,
         paddingBottom: 30,
     },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 30,
-        color: '#4131B6',
-    },
-    formContainer: {
-        width: '100%',
-    },
-    inputGroup: {
-        marginBottom: 15,
-    },
-    label: {
-        fontSize: 14,
-        color: '#666666',
-        marginBottom: 8,
-    },
-    input: {
-        backgroundColor: '#F5F5F5',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        fontSize: 16,
-        color: '#000000',
-        width: '100%',
-    },
-    inputError: {
-        borderWidth: 1,
-        borderColor: '#FF0000',
-    },
-    errorText: {
-        color: '#FF0000',
-        fontSize: 12,
-        marginTop: 4,
-        marginLeft: 4,
-    },
-    dateButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#E8E4FF',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        width: '100%',
-    },
-    dateButtonText: {
-        fontSize: 16,
-        color: '#4131B6',
-        marginLeft: 12,
-        flex: 1,
-    },
-    resumeButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#E8E4FF',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        width: '100%',
-    },
-    resumeButtonText: {
-        fontSize: 16,
-        color: '#4131B6',
-        marginLeft: 12,
-        flex: 1,
-    },
-    continueButton: {
-        backgroundColor: '#4131B6',
-        borderRadius: 50,
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 30,
-        width: '100%',
-    },
-    continueButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginRight: 8,
-    },
-    iconContainer: {
-        width: 24,
-        height: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+
     backButton: {
         position: 'absolute',
         top: 60,
@@ -265,62 +188,248 @@ export const stylesRegister = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
     },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
-    },
-    modalContent: {
-        backgroundColor: '#FFFFFF',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingHorizontal: 20,
-        paddingTop: 20,
-        paddingBottom: 40,
-        maxHeight: '70%',
-    },
-    modalTitle: {
+
+    title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#000000',
-        marginBottom: 20,
         textAlign: 'center',
+        marginBottom: 30,
+        color: '#4131B6',
     },
-    dateSelector: {
+
+    formContainer: {
+        width: '100%',
+    },
+
+    inputGroup: {
+        marginBottom: 15,
+    },
+
+    label: {
+        fontSize: 14,
+        color: '#666666',
+        marginBottom: 8,
+    },
+
+    input: {
+        backgroundColor: '#F5F5F5',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 16,
+        color: '#000000',
+        width: '100%',
+    },
+
+    inputError: {
+        borderWidth: 1,
+        borderColor: '#FF0000',
+    },
+
+    errorText: {
+        color: '#FF0000',
+        fontSize: 12,
+        marginTop: 4,
+        marginLeft: 4,
+    },
+
+    /* ===== Gender dropdown ===== */
+
+    genderDropdownContainer: {
+        position: 'relative',
+        width: '100%',
+        zIndex: 100,
+    },
+
+    genderDropdownButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 20,
-        paddingHorizontal: 10,
+        backgroundColor: '#F5F5F5',
+        borderRadius: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
     },
-    arrowButton: {
-        fontSize: 24,
-        color: '#4131B6',
+
+    genderDropdownButtonText: {
+        fontSize: 16,
+        color: '#000000',
+    },
+
+    genderDropdownPlaceholder: {
+        color: '#999999',
+    },
+
+    genderDropdownArrow: {
+        fontSize: 12,
+        color: '#666666',
+        marginLeft: 8,
+    },
+
+    genderDropdownList: {
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        marginTop: 4,
+        zIndex: 10000,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 10,
+        overflow: 'hidden',
+    },
+
+    genderOption: {
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
+    },
+
+    genderOptionSelected: {
+        backgroundColor: '#4131B6',
+    },
+
+    genderOptionText: {
+        fontSize: 16,
+        color: '#000000',
+    },
+
+    genderOptionTextSelected: {
+        color: '#FFFFFF',
         fontWeight: 'bold',
-        paddingHorizontal: 15,
     },
-    dateDisplay: {
+
+    /* ===== Date button on form ===== */
+
+    dateButton: {
+        flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: '#E8E4FF',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        width: '100%',
+    },
+
+    dateButtonText: {
+        fontSize: 16,
+        color: '#4131B6',
+        marginLeft: 12,
         flex: 1,
     },
-    yearText: {
-        fontSize: 32,
+
+    /* ===== Continue button ===== */
+
+    continueButton: {
+        backgroundColor: '#4131B6',
+        borderRadius: 50,
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 30,
+        width: '100%',
+    },
+
+    continueButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
         fontWeight: 'bold',
-        color: '#4131B6',
-        marginBottom: 4,
+        marginRight: 8,
     },
+
+    /* =========================
+       MODAL (как на 2-м скрине)
+       ========================= */
+
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        justifyContent: 'flex-end',
+    },
+
+    modalContent: {
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingHorizontal: 20,
+        paddingTop: 18,
+        paddingBottom: 28,
+        position: 'relative',
+    },
+
+    sheetHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 14,
+    },
+
+    chevronBtn: {
+        width: 44,
+        height: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    chevron: {
+        fontSize: 28,
+        color: '#4131B6',
+        fontWeight: '700',
+    },
+
+    centerHeader: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    modalTitleSmall: {
+        fontSize: 14,
+        color: '#000000',
+        opacity: 0.75,
+        marginBottom: 6,
+    },
+
+    yearTapArea: {
+        paddingHorizontal: 14,
+        paddingVertical: 4,
+        borderRadius: 10,
+    },
+
+    yearBig: {
+        fontSize: 34,
+        fontWeight: '800',
+        color: '#4131B6',
+        lineHeight: 40,
+    },
+
     monthText: {
-        fontSize: 18,
+        fontSize: 14,
         color: '#4131B6',
+        marginTop: 2,
     },
+
     calendarContainer: {
-        marginBottom: 20,
+        marginBottom: 18,
     },
+
     calendarGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'flex-start',
     },
+
     calendarDay: {
         width: '14.28%',
         aspectRatio: 1,
@@ -328,36 +437,84 @@ export const stylesRegister = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 8,
     },
+
     calendarDayEmpty: {
         opacity: 0,
     },
+
     calendarDaySelected: {
         backgroundColor: '#4131B6',
         borderRadius: 20,
     },
+
     calendarDayText: {
         fontSize: 16,
         color: '#000000',
     },
+
     calendarDayTextSelected: {
         color: '#FFFFFF',
         fontWeight: 'bold',
     },
+
     saveButton: {
         backgroundColor: '#4131B6',
-        borderRadius: 12,
+        borderRadius: 28,
         paddingVertical: 16,
-        paddingHorizontal: 24,
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
+        marginTop: 6,
     },
+
     saveButtonText: {
         color: '#FFFFFF',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '800',
     },
-})
+
+    /* Dropdown years overlay */
+    yearDropdownOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 999,
+    },
+
+    yearDropdownCard: {
+        width: 190,
+        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOpacity: 0.18,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 12,
+    },
+
+    yearRow: {
+        paddingVertical: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#EFEFEF',
+    },
+
+    yearRowSelected: {
+        backgroundColor: '#4131B6',
+    },
+
+    yearRowText: {
+        fontSize: 16,
+        color: '#000000',
+    },
+
+    yearRowTextSelected: {
+        color: '#FFFFFF',
+        fontWeight: '800',
+    },
+});
 
 export const stylesVerification = StyleSheet.create({
     container: {
@@ -546,7 +703,7 @@ export const stylesSkillsChoose = StyleSheet.create({
         paddingBottom: 10,
         position: 'relative',
     },
-    continueButton: {
+    skipButton: {
         flexDirection: 'row',
         alignItems: 'center',
         borderRadius: 50,
@@ -557,8 +714,22 @@ export const stylesSkillsChoose = StyleSheet.create({
         top: 60,
         zIndex: 10,
     },
-    continueButtonText: {
+    skipButtonText: {
         color: '#4131B6',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginRight: 8,
+    },
+    continueButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 50,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        backgroundColor: '#4131B6',
+    },
+    continueButtonText: {
+        color: '#FFFFFF',
         fontSize: 16,
         fontWeight: 'bold',
         marginRight: 8,
@@ -566,6 +737,17 @@ export const stylesSkillsChoose = StyleSheet.create({
     continueButtonArrow: {
         color: '#FFFFFF',
         fontSize: 16,
+    },
+    continueButtonBottom: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#4131B6',
+        borderRadius: 50,
+        paddingVertical: 16,
+        paddingHorizontal: 32,
+        marginTop: 30,
+        marginBottom: 20,
     },
     scrollContent: {
         flexGrow: 1,
@@ -648,7 +830,7 @@ export const stylesSkillsChoose = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#4131B6',
+        borderColor: 'lightgrey',
         paddingVertical: 16,
         paddingHorizontal: 12,
         flexDirection: 'row',
@@ -665,7 +847,7 @@ export const stylesSkillsChoose = StyleSheet.create({
     },
     skillText: {
         fontSize: 16,
-        color: '#4131B6',
+        color: 'black',
         fontWeight: '500',
     },
     skillTextSelected: {
@@ -710,6 +892,18 @@ export const stylesExpectations = StyleSheet.create({
     continueButtonArrow: {
         color: '#FFFFFF',
         fontSize: 16,
+    },
+    continueButtonBottom: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#4131B6',
+        borderRadius: 50,
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        marginTop: 30,
+        marginBottom: 30,
+        marginHorizontal: '7%',
     },
     scrollContent: {
         flexGrow: 1,
@@ -775,25 +969,26 @@ export const stylesExpectations = StyleSheet.create({
         width: '47%',
         backgroundColor: '#FFFFFF',
         borderRadius: 12,
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 10,
+        borderWidth: 1,
         borderColor: 'lightgrey',
-        boxShadow: '2px 2px 5px grey',
+        paddingVertical: 16,
+        paddingHorizontal: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        marginBottom: 12,
     },
     formatButtonSelected: {
         backgroundColor: '#4131B6',
     },
     formatText: {
         fontSize: 14,
-        color: '#000000',
-        fontWeight: 'bold',
-        textAlign: 'center',
+        color: 'black',
+        fontWeight: '500',
     },
     formatTextSelected: {
         color: '#FFFFFF',
+        boxSizing: 'border-box',
     },
     salaryContainer: {
         flexDirection: 'row',

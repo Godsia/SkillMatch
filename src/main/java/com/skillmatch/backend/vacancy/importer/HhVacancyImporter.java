@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -234,6 +235,20 @@ public class HhVacancyImporter {
 
         String logoUrl = pickEmployerLogoUrl(detail.employer);
 
+        String wFormat = null;
+        if (detail.work_formats != null && !detail.work_formats.isEmpty()) {
+            wFormat = detail.work_formats.stream()
+                    .map(wf -> wf.id)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.joining(","));
+        } else if (detail.schedule != null && "remote".equals(detail.schedule.id)) {
+            wFormat = "remote";
+        }
+
+        String exp = detail.experience != null ? detail.experience.id : null;
+        String empType = detail.employment != null ? detail.employment.id : null;
+        String sch = detail.schedule != null ? detail.schedule.id : null;
+
         Vacancy v = Vacancy.builder()
                 .source(SOURCE)
                 .sourceVacancyId(hhId)
@@ -249,6 +264,10 @@ public class HhVacancyImporter {
                 .salaryTo(detail.salary != null ? detail.salary.to : null)
                 .salaryCurrency(detail.salary != null ? detail.salary.currency : null)
                 .salaryGross(detail.salary != null ? detail.salary.gross : null)
+                .experienceLevel(exp)
+                .employmentType(empType)
+                .workSchedule(sch)
+                .workFormat(wFormat)
                 .build();
 
         if (detail.key_skills != null) {
@@ -353,6 +372,13 @@ public class HhVacancyImporter {
         public Area area;
         public Salary salary;
 
+        public IdNameItem experience;
+        public IdNameItem employment;
+        public IdNameItem schedule;
+
+        @JsonProperty("work_format")
+        public List<IdNameItem> work_formats;
+
         public List<SkillDto> key_skills;
     }
 
@@ -385,6 +411,12 @@ public class HhVacancyImporter {
         public Integer to;
         public String currency;
         public Boolean gross;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class IdNameItem {
+        public String id;
+        public String name;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

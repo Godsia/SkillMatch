@@ -1,6 +1,8 @@
 package com.skillmatch.backend.vacancy.service;
 
 import com.skillmatch.backend.user.repo.UserSkillRepository;
+import com.skillmatch.backend.user.repo.UserPreferencesRepository;
+import com.skillmatch.backend.user.model.UserPreferences;
 import com.skillmatch.backend.vacancy.dto.VacancyMatchResponse;
 import com.skillmatch.backend.vacancy.model.Vacancy;
 import com.skillmatch.backend.vacancy.repo.VacancyRepository;
@@ -20,6 +22,7 @@ public class VacancyMatchService {
     private final VacancyRepository vacancyRepository;
     private final UserSkillRepository userSkillRepository;
     private final UserVacancyLikeRepository userVacancyLikeRepository;
+    private final UserPreferencesRepository userPreferencesRepository;
 
     public List<VacancyMatchResponse> listMatchesForUser(Long userId) {
         log.info("Listing vacancy matches userId={}", userId);
@@ -27,6 +30,51 @@ public class VacancyMatchService {
         Set<Long> userSkillIds = userSkillRepository.findAllByUserId(userId).stream()
                 .map(us -> us.getSkillId())
                 .collect(Collectors.toSet());
+
+        UserPreferences prefs = userPreferencesRepository.findById(userId).orElse(null);
+
+        String targetHhExp = null;
+        if (prefs != null && prefs.getExperienceLevel() != null && !prefs.getExperienceLevel().isBlank()) {
+            Map<String, String> expMap = Map.of(
+                    "junior", "noExperience",
+                    "middle", "between1And3",
+                    "senior", "between3And6",
+                    "leader", "moreThan6"
+            );
+            targetHhExp = expMap.get(prefs.getExperienceLevel().toLowerCase());
+        }
+
+        Set<String> targetEmploymentTypes = new HashSet<>();
+        if (prefs != null && prefs.getEmploymentTypes() != null && !prefs.getEmploymentTypes().isBlank()) {
+            Map<String, String> empMap = Map.of(
+                    "full", "full",
+                    "partial", "part",
+                    "projectinformation", "project",
+                    "intership", "probation"
+            );
+            String[] parts = prefs.getEmploymentTypes().split(",");
+            for (String part : parts) {
+                String val = empMap.get(part.trim().toLowerCase());
+                if (val != null) targetEmploymentTypes.add(val);
+            }
+        }
+
+        Set<String> targetWorkFormats = new HashSet<>();
+        if (prefs != null && prefs.getWorkFormats() != null && !prefs.getWorkFormats().isBlank()) {
+            Map<String, String> wfMap = Map.of(
+                    "standart", "fullDay", // "fullDay" or "ON_SITE" ? User said "ON_SITE", but HH sends schedule as "fullDay" etc. User specifically said "standart-ON_SITE, online-REMOTE, hybrid-HYBRID". Wait, I should stick to user request but wait. User wrote "standart-ON_SITE, online-REMOTE, hybrid-HYBRID" in his prompt. Let's use lower/upper cases carefully.
+                    "online", "REMOTE",
+                    "hybrid", "HYBRID"
+            );
+            String[] parts = prefs.getWorkFormats().split(",");
+            for (String part : parts) {
+                String val = wfMap.get(part.trim().toLowerCase());
+                if (val != null) targetWorkFormats.add(val);
+            }
+        }
+
+        int reqSalFrom = (prefs != null && prefs.getSalaryFrom() != null) ? prefs.getSalaryFrom() : 0;
+        int reqSalTo = (prefs != null && prefs.getSalaryTo() != null && prefs.getSalaryTo() > 0) ? prefs.getSalaryTo() : Integer.MAX_VALUE;
 
         // Exclude vacancies that the user already interacted with (liked OR disliked)
         List<Long> interactedIds = userVacancyLikeRepository.findInteractedVacancyIds(userId);
@@ -39,6 +87,38 @@ public class VacancyMatchService {
         List<VacancyMatchResponse> res = new ArrayList<>(vacancies.size());
 
         for (Vacancy v : vacancies) {
+            if (targetHhExp != null) {
+                if (!targetHhExp.equals(v.getExperienceLevel())) {
+                    continue;
+                }
+            }
+
+            if (reqSalFrom > 0 || reqSalTo < Integer.MAX_VALUE) {
+                int vacSalFrom = (v.getSalaryFrom() != null) ? v.getSalaryFrom() : 0;
+                int vacSalTo = (v.getSalaryTo() != null && v.getSalaryTo() > 0) ? v.getSalaryTo() : Integer.MAX_VALUE;
+
+                int maxFrom = Math.max(reqSalFrom, vacSalFrom);
+                int minTo = Math.min(reqSalTo, vacSalTo);
+
+                if (maxFrom > minTo) {
+                    continue;
+                }
+            }
+
+            if (!targetEmploymentTypes.isEmpty() && v.getEmploymentType() != null) {
+                String vacEmpType = v.getEmploymentType().toLowerCase();
+                if (!targetEmploymentTypes.contains(vacEmpType)) {
+                    continue;
+                }
+            }
+
+            if (!targetWorkFormats.isEmpty() && v.getWorkFormat() != null) {
+                String vacWorkFormat = v.getWorkFormat().toLowerCase();
+                if (!targetWorkFormats.contains(vacWorkFormat)) {
+                    continue;
+                }
+            }
+
             int total = (v.getSkills() == null) ? 0 : v.getSkills().size();
             int overlap = 0;
 
@@ -75,6 +155,10 @@ public class VacancyMatchService {
                     .salaryTo(v.getSalaryTo())
                     .salaryCurrency(v.getSalaryCurrency())
                     .salaryGross(v.getSalaryGross())
+                    .experienceLevel(v.getExperienceLevel())
+                    .employmentType(v.getEmploymentType())
+                    .workSchedule(v.getWorkSchedule())
+                    .workFormat(v.getWorkFormat())
                     .skills(skillNames)
                     .matchPercent(matchPercent)
                     .liked(likedVacancyIds.contains(v.getId()))
@@ -140,6 +224,10 @@ public class VacancyMatchService {
                     .salaryTo(v.getSalaryTo())
                     .salaryCurrency(v.getSalaryCurrency())
                     .salaryGross(v.getSalaryGross())
+                    .experienceLevel(v.getExperienceLevel())
+                    .employmentType(v.getEmploymentType())
+                    .workSchedule(v.getWorkSchedule())
+                    .workFormat(v.getWorkFormat())
                     .skills(skillNames)
                     .matchPercent(matchPercent)
                     .liked(true)
@@ -204,6 +292,10 @@ public class VacancyMatchService {
                     .salaryTo(v.getSalaryTo())
                     .salaryCurrency(v.getSalaryCurrency())
                     .salaryGross(v.getSalaryGross())
+                    .experienceLevel(v.getExperienceLevel())
+                    .employmentType(v.getEmploymentType())
+                    .workSchedule(v.getWorkSchedule())
+                    .workFormat(v.getWorkFormat())
                     .skills(skillNames)
                     .matchPercent(matchPercent)
                     .liked(false)

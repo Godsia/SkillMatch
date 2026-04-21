@@ -14,6 +14,8 @@ public class UserPreferences {
 
     private String workFormats;
 
+    private String employmentTypes;
+
     private String experienceLevel;
 
     private Integer salaryFrom;

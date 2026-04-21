@@ -247,7 +247,7 @@ class ProfileControllerIT {
         testUser = userRepository.save(testUser);
 
         SetPreferencesRequest req = new SetPreferencesRequest(
-                "remote", "senior", 150000, 300000, "month"
+                "remote", "full", "senior", 150000, 300000, "month"
         );
 
         mockMvc.perform(put("/profile/preferences")
@@ -280,7 +280,7 @@ class ProfileControllerIT {
 
         // Обновляем
         SetPreferencesRequest req = new SetPreferencesRequest(
-                "hybrid", "middle", 100000, 180000, "month"
+                "hybrid", "full", "middle", 100000, 180000, "month"
         );
 
         mockMvc.perform(put("/profile/preferences")

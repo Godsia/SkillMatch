@@ -7,7 +7,9 @@ import com.skillmatch.backend.config.ApiException;
 import com.skillmatch.backend.security.JwtService;
 import com.skillmatch.backend.user.model.User;
 import com.skillmatch.backend.user.model.UserStatus;
+import com.skillmatch.backend.user.model.UserPreferences;
 import com.skillmatch.backend.user.repo.UserRepository;
+import com.skillmatch.backend.user.repo.UserPreferencesRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +31,7 @@ public class AuthService {
 
     private final EmailService emailService;
     private final UserRepository userRepository;
+    private final UserPreferencesRepository userPreferencesRepository;
     private final EmailCodeRepository emailCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -64,6 +67,10 @@ public class AuthService {
             u.setStatus(UserStatus.NEW);
             u = userRepository.save(u);
         }
+
+        UserPreferences prefs = userPreferencesRepository.findById(u.getId()).orElse(new UserPreferences());
+        prefs.setUserId(u.getId());
+        userPreferencesRepository.save(prefs);
 
         String code = generate6Digits();
         EmailVerificationCode c = new EmailVerificationCode();
@@ -120,6 +127,65 @@ public class AuthService {
         u = userRepository.save(u);
 
         log.info("Password set successfully, user is now ACTIVE userId={}", userId);
+        return new RegisterStepResponse(u.getStatus());
+    }
+
+    public RegisterInitResponse resetPasswordInit(PasswordResetInitRequest req) {
+        log.info("Password reset initiated for email={}", req.email());
+
+        var existing = userRepository.findByEmail(req.email().toLowerCase());
+        if (existing.isEmpty()) {
+            throw new ApiException("User not found");
+        }
+        User u = existing.get();
+
+        String code = generate6Digits();
+        EmailVerificationCode c = new EmailVerificationCode();
+        c.setUserId(u.getId());
+        c.setCode(code);
+        c.setExpiresAt(Instant.now().plus(codeTtlMinutes, ChronoUnit.MINUTES));
+        emailCodeRepository.save(c);
+
+        emailService.sendVerificationCode(u.getEmail(), code);
+
+        String token = jwtService.issueToken(u.getId(), u.getEmail());
+        log.info("Password reset code sent successfully userId={}, email={}", u.getId(), u.getEmail());
+        return new RegisterInitResponse(token, u.getStatus(), "Password reset code sent");
+    }
+
+    public RegisterStepResponse resetPasswordVerify(Long userId, VerifyEmailRequest req) {
+        log.info("Password reset verification attempt userId={}", userId);
+        EmailVerificationCode code = emailCodeRepository
+                .findTopByUserIdOrderByCreatedAtDesc(userId)
+                .orElseThrow(() -> new ApiException("Verification code not found"));
+
+        if (code.isUsed()) throw new ApiException("Code already used");
+        if (Instant.now().isAfter(code.getExpiresAt())) throw new ApiException("Code expired");
+        if (!code.getCode().equals(req.code())) throw new ApiException("Invalid code");
+
+        code.setUsed(true);
+        emailCodeRepository.save(code);
+
+        User u = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException("User not found"));
+
+        log.info("Password reset verified successfully userId={}", userId);
+        return new RegisterStepResponse(u.getStatus());
+    }
+
+    public RegisterStepResponse resetPasswordSet(Long userId, SetPasswordRequest req) {
+        log.info("Password reset finish attempt userId={}", userId);
+        if (!req.password().equals(req.confirmPassword())) {
+            throw new ApiException("Passwords do not match");
+        }
+
+        User u = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException("User not found"));
+
+        u.setPasswordHash(passwordEncoder.encode(req.password()));
+        u = userRepository.save(u);
+
+        log.info("Password reset fully completed userId={}", userId);
         return new RegisterStepResponse(u.getStatus());
     }
 

@@ -30,6 +30,11 @@ public class VacancyMatchResponse {
     private String salaryCurrency;
     private Boolean salaryGross;
 
+    private String experienceLevel;
+    private String employmentType;
+    private String workSchedule;
+    private String workFormat;
+
     private List<String> skills;
 
     private double matchPercent;

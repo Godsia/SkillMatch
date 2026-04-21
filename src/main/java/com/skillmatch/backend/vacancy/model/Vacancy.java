@@ -66,6 +66,18 @@ public class Vacancy {
     @Column(name = "salary_gross")
     private Boolean salaryGross;
 
+    @Column(name = "experience_level", length = 100)
+    private String experienceLevel;
+
+    @Column(name = "employment_type", length = 100)
+    private String employmentType;
+
+    @Column(name = "work_schedule", length = 100)
+    private String workSchedule;
+
+    @Column(name = "work_format", length = 100)
+    private String workFormat;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "vacancy_skills",

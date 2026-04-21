@@ -34,18 +34,22 @@ public class ProfileService {
                 .toList();
 
         UserPreferences prefs = userPreferencesRepository.findById(userId).orElse(null);
-        PreferencesDto prefsDto = prefs == null ? null : new PreferencesDto(
-                prefs.getWorkFormats(),
-                prefs.getExperienceLevel(),
-                prefs.getSalaryFrom(),
-                prefs.getSalaryTo(),
-                prefs.getSalaryPeriod()
-        );
+        PreferencesDto prefDto = null;
+        if (prefs != null) {
+            prefDto = new PreferencesDto(
+                    prefs.getWorkFormats(),
+                    prefs.getEmploymentTypes(),
+                    prefs.getExperienceLevel(),
+                    prefs.getSalaryFrom(),
+                    prefs.getSalaryTo(),
+                    prefs.getSalaryPeriod()
+            );
+        }
 
         return new MeResponse(
                 u.getId(), u.getEmail(), u.getFirstName(), u.getLastName(),
                 u.getGender(), u.getBirthDate(), u.getStatus(),
-                skillNames, prefsDto
+                skillNames, prefDto
         );
     }
 
@@ -114,6 +118,7 @@ public class ProfileService {
         UserPreferences p = userPreferencesRepository.findById(userId).orElse(new UserPreferences());
         p.setUserId(userId);
         p.setWorkFormats(req.workFormats());
+        p.setEmploymentTypes(req.employmentTypes());
         p.setExperienceLevel(req.experienceLevel());
         p.setSalaryFrom(req.salaryFrom());
         p.setSalaryTo(req.salaryTo());

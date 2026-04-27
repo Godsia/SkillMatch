@@ -62,7 +62,7 @@ public class VacancyMatchService {
         Set<String> targetWorkFormats = new HashSet<>();
         if (prefs != null && prefs.getWorkFormats() != null && !prefs.getWorkFormats().isBlank()) {
             Map<String, String> wfMap = Map.of(
-                    "standart", "fullDay", // "fullDay" or "ON_SITE" ? User said "ON_SITE", but HH sends schedule as "fullDay" etc. User specifically said "standart-ON_SITE, online-REMOTE, hybrid-HYBRID". Wait, I should stick to user request but wait. User wrote "standart-ON_SITE, online-REMOTE, hybrid-HYBRID" in his prompt. Let's use lower/upper cases carefully.
+                    "standart", "ON_SITE",
                     "online", "REMOTE",
                     "hybrid", "HYBRID"
             );

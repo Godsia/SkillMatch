@@ -76,7 +76,6 @@ public class VacancyMatchService {
         int reqSalFrom = (prefs != null && prefs.getSalaryFrom() != null) ? prefs.getSalaryFrom() : 0;
         int reqSalTo = (prefs != null && prefs.getSalaryTo() != null && prefs.getSalaryTo() > 0) ? prefs.getSalaryTo() : Integer.MAX_VALUE;
 
-        // Exclude vacancies that the user already interacted with (liked OR disliked)
         List<Long> interactedIds = userVacancyLikeRepository.findInteractedVacancyIds(userId);
         List<Vacancy> vacancies = interactedIds.isEmpty()
                 ? vacancyRepository.findAllByOrderByPublishedAtDesc()
@@ -112,9 +111,29 @@ public class VacancyMatchService {
                 }
             }
 
-            if (!targetWorkFormats.isEmpty() && v.getWorkFormat() != null) {
-                String vacWorkFormat = v.getWorkFormat().toLowerCase();
-                if (!targetWorkFormats.contains(vacWorkFormat)) {
+            if (!targetWorkFormats.isEmpty()) {
+                if (v.getWorkFormat() != null) {
+                    String vacWorkFormat = v.getWorkFormat().toLowerCase(); // but wfMap values are "fullDay", "REMOTE", "HYBRID"!!!
+                    // Actually we should match ignoring cases
+                    boolean match = false;
+                    for (String twf : targetWorkFormats) {
+                        if (vacWorkFormat.equalsIgnoreCase(twf)) {
+                            match = true;
+                            break;
+                        }
+                    }
+                    if (!match) continue;
+                } else if (v.getWorkSchedule() != null) {
+                    String vacWorkSchedule = v.getWorkSchedule().toLowerCase();
+                    boolean match = false;
+                    for (String twf : targetWorkFormats) {
+                        if (vacWorkSchedule.equalsIgnoreCase(twf)) {
+                            match = true;
+                            break;
+                        }
+                    }
+                    if (!match) continue;
+                } else {
                     continue;
                 }
             }

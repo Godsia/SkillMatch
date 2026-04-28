@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import HeadPage from "./components/head";
-import {NavigationContainer} from "@react-navigation/native";
+import {NavigationContainer, createNavigationContainerRef} from "@react-navigation/native";
 import {createNativeStackNavigator} from "@react-navigation/native-stack";
 import RedirectionPage from "./components/auth/register/redirection";
 import RegisterRootComponent from "./components/auth/register";
 import LoginPage from "./components/auth/login";
+import PasswordResetPage from "./components/auth/passwordReset";
 import HomePage from "./components/home/main";
 import SelectedVacanciesPage from "./components/home/selectedVacancies";
 import ProfilePage from "./components/home/profile";
-import { loadTokenFromStorage, setAccessToken } from "./services/api";
+import { loadTokenFromStorage, setAccessToken, setOnAuthFailure } from "./services/api";
+
+const navigationRef = createNavigationContainerRef();
 
 export default function App() {
     const [isReady, setIsReady] = useState(false);
@@ -24,6 +27,23 @@ export default function App() {
             }
             setIsReady(true);
         })();
+
+        // Глобальный обработчик ошибок авторизации:
+        // если бэкенд вернул 401/403 или 400 "User not found" — токен уже сброшен
+        // в перехватчике, остаётся отправить пользователя на экран логина.
+        setOnAuthFailure((reason) => {
+            console.warn('Сессия недействительна, переходим на экран логина:', reason);
+            if (navigationRef.isReady()) {
+                navigationRef.reset({
+                    index: 0,
+                    routes: [{ name: 'Authorization' as never }],
+                });
+            }
+        });
+
+        return () => {
+            setOnAuthFailure(null);
+        };
     }, []);
 
     if (!isReady) {
@@ -37,7 +57,7 @@ export default function App() {
     const Stack = createNativeStackNavigator();
 
     return (
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
             <Stack.Navigator
                 initialRouteName={hasStoredToken ? 'Home' : 'Head'}
                 screenOptions={{
@@ -68,6 +88,13 @@ export default function App() {
                 <Stack.Screen
                     name="Authorization"
                     component={LoginPage}
+                    options={{
+                        headerShown: false
+                    }}
+                />
+                <Stack.Screen
+                    name="PasswordReset"
+                    component={PasswordResetPage}
                     options={{
                         headerShown: false
                     }}

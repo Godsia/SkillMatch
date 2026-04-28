@@ -1028,6 +1028,27 @@ export const stylesExpectations = StyleSheet.create({
         fontSize: 16,
         color: '#000000',
     },
+    salaryInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        paddingHorizontal: 16,
+    },
+    salaryInputFlat: {
+        flex: 1,
+        paddingVertical: 14,
+        fontSize: 16,
+        color: '#000000',
+    },
+    salaryCurrency: {
+        fontSize: 16,
+        color: '#999999',
+        fontWeight: '600',
+        marginLeft: 6,
+    },
     periodButton: {
         borderWidth: 1,
         borderColor: 'lightgrey',

@@ -1,9 +1,9 @@
 import {View, Text, Pressable, SafeAreaView, ScrollView, ActivityIndicator, Alert, StyleSheet, Modal, TextInput} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useState, useEffect} from 'react';
-import {authApi, UserProfile, getAccessToken, setAccessToken} from '../../../services/api';
+import {authApi, UserProfile, getAccessToken, setAccessToken, isAuthFailureError} from '../../../services/api';
 import {allSkills} from '../../../data/skills';
-import {allWorkFormation, allExperience} from '../../../data/expectations';
+import {allWorkFormation, allEmploymentTypes, allExperience} from '../../../data/expectations';
 import {stylesSkillsChoose} from '../../../styles/register/style';
 import {stylesExpectations} from '../../../styles/register/style';
 import {styles as homeStyles} from '../../../styles/home';
@@ -22,6 +22,7 @@ export default function ProfilePage() {
     
     // Состояние для редактирования условий
     const [workFormation, setWorkFormation] = useState<string[]>([]);
+    const [employmentTypes, setEmploymentTypes] = useState<string[]>([]);
     const [experience, setExperience] = useState<string>("");
     const [salary, setSalary] = useState<number[]>([0, 0]);
     const [salaryPeriod, setSalaryPeriod] = useState<string>("");
@@ -46,6 +47,12 @@ export default function ProfilePage() {
             setProfile(data);
         } catch (error: any) {
             console.error('Ошибка загрузки профиля:', error);
+            // Ошибки авторизации обрабатываются глобально в services/api.ts —
+            // там сбрасывается токен и происходит переход на экран логина,
+            // поэтому не показываем повторный алерт.
+            if (isAuthFailureError(error)) {
+                return;
+            }
             Alert.alert(
                 "Ошибка",
                 error.response?.data?.message || "Не удалось загрузить профиль. Попробуйте позже."
@@ -63,17 +70,18 @@ export default function ProfilePage() {
     const calculateProfileCompletion = (): number => {
         if (!profile) return 0;
         let completed = 0;
-        let total = 6;
-        
+        let total = 7;
+
         if (profile.firstName) completed++;
         if (profile.lastName) completed++;
         if (profile.email) completed++;
         if (profile.skills && profile.skills.length > 0) completed++;
         if (profile.preferences) {
             if (profile.preferences.workFormats) completed++;
+            if (profile.preferences.employmentTypes) completed++;
             if (profile.preferences.experienceLevel) completed++;
         }
-        
+
         return Math.round((completed / total) * 100);
     };
 
@@ -128,14 +136,21 @@ export default function ProfilePage() {
             // Инициализируем данные условий из профиля
             const prefs = profile.preferences;
             if (prefs) {
-                // Преобразуем workFormats из строки в массив
-                const workFormatsArray = prefs.workFormats ? prefs.workFormats.split(',') : [];
+                // Преобразуем строки с CSV в массивы id'ов
+                const workFormatsArray = prefs.workFormats
+                    ? prefs.workFormats.split(',').map(s => s.trim()).filter(Boolean)
+                    : [];
+                const employmentTypesArray = prefs.employmentTypes
+                    ? prefs.employmentTypes.split(',').map(s => s.trim()).filter(Boolean)
+                    : [];
                 setWorkFormation(workFormatsArray);
+                setEmploymentTypes(employmentTypesArray);
                 setExperience(prefs.experienceLevel || '');
                 setSalary([prefs.salaryFrom || 0, prefs.salaryTo || 0]);
                 setSalaryPeriod(prefs.salaryPeriod || '');
             } else {
                 setWorkFormation([]);
+                setEmploymentTypes([]);
                 setExperience('');
                 setSalary([0, 0]);
                 setSalaryPeriod('');
@@ -197,6 +212,9 @@ export default function ProfilePage() {
             setIsEditModalVisible(false);
             Alert.alert("Успешно", "Навыки обновлены");
         } catch (error: any) {
+            if (isAuthFailureError(error)) {
+                return;
+            }
             Alert.alert(
                 "Ошибка",
                 error.response?.data?.message || "Не удалось сохранить навыки. Попробуйте еще раз."
@@ -216,6 +234,7 @@ export default function ProfilePage() {
 
             const preferencesData = {
                 workFormats: workFormation.join(','),
+                employmentTypes: employmentTypes.join(','),
                 experienceLevel: experience || '',
                 salaryFrom: salary[0] || 0,
                 salaryTo: salary[1] || 0,
@@ -227,6 +246,9 @@ export default function ProfilePage() {
             setIsEditModalVisible(false);
             Alert.alert("Успешно", "Условия обновлены");
         } catch (error: any) {
+            if (isAuthFailureError(error)) {
+                return;
+            }
             Alert.alert(
                 "Ошибка",
                 error.response?.data?.message || "Не удалось сохранить условия. Попробуйте еще раз."
@@ -242,6 +264,14 @@ export default function ProfilePage() {
             setWorkFormation(workFormation.filter(id => id !== formatId));
         } else {
             setWorkFormation([...workFormation, formatId]);
+        }
+    };
+
+    const toggleEmploymentType = (typeId: string) => {
+        if (employmentTypes.includes(typeId)) {
+            setEmploymentTypes(employmentTypes.filter(id => id !== typeId));
+        } else {
+            setEmploymentTypes([...employmentTypes, typeId]);
         }
     };
 
@@ -284,6 +314,17 @@ export default function ProfilePage() {
         const ids = workFormatsValue.split(',').map(s => s.trim()).filter(Boolean);
         const names = ids.map(id => {
             const item = allWorkFormation.find(f => f.id === id);
+            return item ? item.name : id;
+        });
+        return names.join(', ');
+    };
+
+    /** Преобразует id типов занятости с бэка в русские названия для отображения */
+    const getEmploymentTypeDisplayNames = (employmentTypesValue: string): string => {
+        if (!employmentTypesValue?.trim()) return '';
+        const ids = employmentTypesValue.split(',').map(s => s.trim()).filter(Boolean);
+        const names = ids.map(id => {
+            const item = allEmploymentTypes.find(t => t.id === id);
             return item ? item.name : id;
         });
         return names.join(', ');
@@ -404,8 +445,24 @@ export default function ProfilePage() {
 {/*                            <Pressable style={styles.editButtonInTab} onPress={openEditModal}>
                                 <Text style={styles.editButtonInTabText}>Редактировать условия</Text>
                             </Pressable>*/}
-                            {/* Employment Type */}
+                            {/* Work Format */}
                             {profile.preferences?.workFormats && (
+                                <View style={styles.conditionSection}>
+                                    <View style={styles.conditionHeader}>
+                                        <Text style={styles.conditionTitle}>Формат работы</Text>
+                                    </View>
+                                    <View style={styles.conditionButtons}>
+                                        <View style={[styles.conditionButton, styles.conditionButtonActive]}>
+                                            <Text style={[styles.conditionButtonText, styles.conditionButtonTextActive]}>
+                                                {getWorkFormatDisplayNames(profile.preferences.workFormats)}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* Employment Type */}
+                            {profile.preferences?.employmentTypes && (
                                 <View style={styles.conditionSection}>
                                     <View style={styles.conditionHeader}>
                                         <Text style={styles.conditionTitle}>Тип занятости</Text>
@@ -413,7 +470,7 @@ export default function ProfilePage() {
                                     <View style={styles.conditionButtons}>
                                         <View style={[styles.conditionButton, styles.conditionButtonActive]}>
                                             <Text style={[styles.conditionButtonText, styles.conditionButtonTextActive]}>
-                                                {getWorkFormatDisplayNames(profile.preferences.workFormats)}
+                                                {getEmploymentTypeDisplayNames(profile.preferences.employmentTypes)}
                                             </Text>
                                         </View>
                                     </View>
@@ -453,7 +510,8 @@ export default function ProfilePage() {
                             )}
 
                             {/* Если нет данных */}
-                            {!profile.preferences?.workFormats && !profile.preferences?.experienceLevel && 
+                            {!profile.preferences?.workFormats && !profile.preferences?.employmentTypes &&
+                             !profile.preferences?.experienceLevel &&
                              !profile.preferences?.salaryFrom && !profile.preferences?.salaryTo && (
                                 <View style={styles.conditionSection}>
                                     <Text style={styles.emptyText}>Условия не указаны</Text>
@@ -606,7 +664,34 @@ export default function ProfilePage() {
                                     })}
                                 </View>
                             </View>
-                            
+
+                            {/* Секция типа занятости */}
+                            <View style={stylesExpectations.section}>
+                                <Text style={stylesExpectations.sectionTitle}>Тип занятости</Text>
+                                <View style={stylesExpectations.formatsContainer}>
+                                    {allEmploymentTypes.map((type) => {
+                                        const isSelected = employmentTypes.includes(type.id);
+                                        return (
+                                            <Pressable
+                                                key={type.id}
+                                                style={[
+                                                    stylesExpectations.formatButton,
+                                                    isSelected && stylesExpectations.formatButtonSelected
+                                                ]}
+                                                onPress={() => toggleEmploymentType(type.id)}
+                                            >
+                                                <Text style={[
+                                                    stylesExpectations.formatText,
+                                                    isSelected && stylesExpectations.formatTextSelected
+                                                ]}>
+                                                    {type.name}
+                                                </Text>
+                                            </Pressable>
+                                        );
+                                    })}
+                                </View>
+                            </View>
+
                             {/* Секция опыта работы */}
                             <View style={stylesExpectations.section}>
                                 <Text style={stylesExpectations.sectionTitle}>Уровень и опыт</Text>
@@ -640,25 +725,31 @@ export default function ProfilePage() {
                                 <View style={stylesExpectations.salaryContainer}>
                                     <View style={stylesExpectations.salaryInputWrapper}>
                                         <Text style={stylesExpectations.salaryLabel}>От</Text>
-                                        <TextInput
-                                            style={stylesExpectations.inputSalary}
-                                            value={salary[0] ? salary[0].toString() : ''}
-                                            onChangeText={handleSalaryFromChange}
-                                            placeholder="Введите сумму"
-                                            placeholderTextColor="#999999"
-                                            keyboardType="numeric"
-                                        />
+                                        <View style={stylesExpectations.salaryInputRow}>
+                                            <TextInput
+                                                style={stylesExpectations.salaryInputFlat}
+                                                value={salary[0] ? salary[0].toString() : ''}
+                                                onChangeText={handleSalaryFromChange}
+                                                placeholder="Сумма"
+                                                placeholderTextColor="#999999"
+                                                keyboardType="numeric"
+                                            />
+                                            <Text style={stylesExpectations.salaryCurrency}>₽</Text>
+                                        </View>
                                     </View>
                                     <View style={stylesExpectations.salaryInputWrapper}>
                                         <Text style={stylesExpectations.salaryLabel}>До</Text>
-                                        <TextInput
-                                            style={stylesExpectations.inputSalary}
-                                            value={salary[1] ? salary[1].toString() : ''}
-                                            onChangeText={handleSalaryToChange}
-                                            placeholder="Введите сумму"
-                                            placeholderTextColor="#999999"
-                                            keyboardType="numeric"
-                                        />
+                                        <View style={stylesExpectations.salaryInputRow}>
+                                            <TextInput
+                                                style={stylesExpectations.salaryInputFlat}
+                                                value={salary[1] ? salary[1].toString() : ''}
+                                                onChangeText={handleSalaryToChange}
+                                                placeholder="Сумма"
+                                                placeholderTextColor="#999999"
+                                                keyboardType="numeric"
+                                            />
+                                            <Text style={stylesExpectations.salaryCurrency}>₽</Text>
+                                        </View>
                                     </View>
                                     <View style={stylesExpectations.periodWrapper}>
                                         <Text style={stylesExpectations.salaryLabel}>Период</Text>

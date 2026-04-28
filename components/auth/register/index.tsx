@@ -61,6 +61,7 @@ export default function RegisterRootComponent() {
 
     //Данные для ожиданий по работе
     const [workFormation, setWorkFormation] = useState<string[]>([]);
+    const [employmentTypes, setEmploymentTypes] = useState<string[]>([]);
     const [experience, setExperience] = useState<string[]>([]);
     const [salary, setSalary] = useState<number[]>([]);
     const [salaryPeriod, setSalaryPeriod] = useState<string>("");
@@ -318,6 +319,7 @@ export default function RegisterRootComponent() {
             // Преобразуем данные в формат API
             const preferencesData = {
                 workFormats: workFormation.join(','),
+                employmentTypes: employmentTypes.join(','),
                 experienceLevel: experience.join(','),
                 salaryFrom: salary[0] || 0,
                 salaryTo: salary[1] || 0,
@@ -496,10 +498,12 @@ export default function RegisterRootComponent() {
                     handleGoBack={handleGoBack}
                     handleContinue={handleExpectationsContinue}
                     workFormation={workFormation}
+                    employmentTypes={employmentTypes}
                     experience={experience}
                     salary={salary}
                     salaryPeriod={salaryPeriod}
                     setWorkFormation={setWorkFormation}
+                    setEmploymentTypes={setEmploymentTypes}
                     setExperience={setExperience}
                     setSalary={setSalary}
                     setSalaryPeriod={setSalaryPeriod}

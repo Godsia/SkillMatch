@@ -13,7 +13,7 @@ import {
     Linking,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { vacanciesApi, Vacancy, getAccessToken, setAccessToken } from '../../../services/api';
+import { vacanciesApi, Vacancy, getAccessToken, setAccessToken, isAuthFailureError } from '../../../services/api';
 import {styles as homeStyles, styles} from '../../../styles/home';
 import VacancyCard from '../VacancyCard';
 
@@ -37,6 +37,9 @@ export default function SelectedVacanciesPage() {
             setVacancies(data);
         } catch (error: any) {
             console.error('Ошибка загрузки:', error);
+            if (isAuthFailureError(error)) {
+                return;
+            }
             Alert.alert(
                 'Ошибка',
                 error.response?.data?.message || (tab === 'favorites' ? 'Не удалось загрузить избранные.' : 'Не удалось загрузить архив.')

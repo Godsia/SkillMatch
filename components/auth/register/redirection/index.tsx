@@ -12,7 +12,7 @@ export default function RedirectionPage() {
     return (
         <View style={stylesRedirect.container}>
             <ImageBackground
-                source={require('../../../../images/backgroundauth.jpg')}
+                source={require('../../../../images/backgroundauth_reverse.jpg')}
                 style={stylesRedirect.background}
                 resizeMode="cover"
             >

@@ -1,12 +1,18 @@
+// Формат работы — где сотрудник физически находится / в каком режиме работает.
+// id'ы соответствуют тому, что ожидает бэкенд в поле `workFormats`.
 export const allWorkFormation : {id: string, name: string}[] = [
-    {id: 'full', name: 'Полный'},
-    {id: 'flexible', name: 'Гибкий'},
-    {id: 'projectInformation', name: 'Проектный'},
-    {id: 'standard', name: 'Стандартный'},
-    {id: 'partial', name: 'Частичный (Подработка)'},
-    {id: 'internShip', name: 'Стажировка'},
-    {id: 'online', name: 'Удаленный'},
-    {id: 'Free', name: 'Свободный'},
+    {id: 'standart', name: 'Стандартный'},
+    {id: 'online', name: 'Удалённый'},
+    {id: 'hybrid', name: 'Гибридный'},
+]
+
+// Тип занятости — структура трудоустройства.
+// id'ы соответствуют тому, что ожидает бэкенд в поле `employmentTypes`.
+export const allEmploymentTypes : {id: string, name: string}[] = [
+    {id: 'full', name: 'Полная'},
+    {id: 'projectinformation', name: 'Проектная'},
+    {id: 'partial', name: 'Частичная (подработка)'},
+    {id: 'intership', name: 'Стажировка'},
 ]
 
 export const allExperience : {id: string, name: string}[] = [

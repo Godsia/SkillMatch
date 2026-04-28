@@ -70,6 +70,10 @@ export default function LoginPage() {
         }
     };
 
+    const handleForgotPassword = () => {
+        navigation.navigate('PasswordReset' as never);
+    };
+
     return (
         <SafeAreaView style={stylesRegister.container}>
             <Pressable 
@@ -136,6 +140,16 @@ export default function LoginPage() {
                         )}
                     </View>
         </View>
+
+                <Pressable
+                    onPress={handleForgotPassword}
+                    style={{marginTop: 6, alignSelf: 'flex-end'}}
+                    disabled={isLoading}
+                >
+                    <Text style={{color: '#4131B6', fontSize: 14, fontWeight: '600'}}>
+                        Забыли пароль?
+                    </Text>
+                </Pressable>
 
                 {/* Кнопка Войти */}
                 <Pressable 

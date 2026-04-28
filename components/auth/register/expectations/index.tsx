@@ -1,16 +1,18 @@
 import {Pressable, SafeAreaView, ScrollView, Text, TextInput, View, Modal} from "react-native";
 import {stylesExpectations} from "../../../../styles/register/style";
-import {allExperience, allWorkFormation} from "../../../../data/expectations";
+import {allEmploymentTypes, allExperience, allWorkFormation} from "../../../../data/expectations";
 import {useState} from "react";
 
 interface ExpectationsPageProps {
     handleGoBack: () => void;
     handleContinue: () => void;
     workFormation: string[];
+    employmentTypes: string[];
     experience: string[];
     salary: number[];
     salaryPeriod: string;
     setWorkFormation: (value: string[]) => void;
+    setEmploymentTypes: (value: string[]) => void;
     setExperience: (value: string[]) => void;
     setSalary: (value: number[]) => void;
     setSalaryPeriod: (value: string) => void;
@@ -29,10 +31,12 @@ export default function ExpectationsPage({
     handleGoBack,
     handleContinue,
     workFormation,
+    employmentTypes,
     experience,
     salary,
     salaryPeriod,
     setWorkFormation,
+    setEmploymentTypes,
     setExperience,
     setSalary,
     setSalaryPeriod,
@@ -44,6 +48,14 @@ export default function ExpectationsPage({
             setWorkFormation(workFormation.filter(id => id !== formatId));
         } else {
             setWorkFormation([...workFormation, formatId]);
+        }
+    };
+
+    const toggleEmploymentType = (typeId: string) => {
+        if (employmentTypes.includes(typeId)) {
+            setEmploymentTypes(employmentTypes.filter(id => id !== typeId));
+        } else {
+            setEmploymentTypes([...employmentTypes, typeId]);
         }
     };
 
@@ -134,6 +146,32 @@ export default function ExpectationsPage({
                         })}
                     </View>
                 </View>
+                {/* Секция типа занятости */}
+                <View style={stylesExpectations.section}>
+                    <Text style={stylesExpectations.sectionTitle}>Тип занятости</Text>
+                    <View style={stylesExpectations.formatsContainer}>
+                        {allEmploymentTypes.map((type) => {
+                            const isSelected = employmentTypes.includes(type.id);
+                            return (
+                                <Pressable
+                                    key={type.id}
+                                    style={[
+                                        stylesExpectations.formatButton,
+                                        isSelected && stylesExpectations.formatButtonSelected
+                                    ]}
+                                    onPress={() => toggleEmploymentType(type.id)}
+                                >
+                                    <Text style={[
+                                        stylesExpectations.formatText,
+                                        isSelected && stylesExpectations.formatTextSelected
+                                    ]}>
+                                        {type.name}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+                </View>
                 {/* Секция опыта работы */}
                 <View style={stylesExpectations.section}>
                     <Text style={stylesExpectations.sectionTitle}>Уровень и опыт</Text>
@@ -166,25 +204,31 @@ export default function ExpectationsPage({
                     <View style={stylesExpectations.salaryContainer}>
                         <View style={stylesExpectations.salaryInputWrapper}>
                             <Text style={stylesExpectations.salaryLabel}>От</Text>
-                            <TextInput
-                                style={stylesExpectations.inputSalary}
-                                value={salary[0] ? salary[0].toString() : ''}
-                                onChangeText={handleSalaryFromChange}
-                                placeholder="Введите сумму"
-                                placeholderTextColor="#999999"
-                                keyboardType="numeric"
-                            />
+                            <View style={stylesExpectations.salaryInputRow}>
+                                <TextInput
+                                    style={stylesExpectations.salaryInputFlat}
+                                    value={salary[0] ? salary[0].toString() : ''}
+                                    onChangeText={handleSalaryFromChange}
+                                    placeholder="Сумма"
+                                    placeholderTextColor="#999999"
+                                    keyboardType="numeric"
+                                />
+                                <Text style={stylesExpectations.salaryCurrency}>₽</Text>
+                            </View>
                         </View>
                         <View style={stylesExpectations.salaryInputWrapper}>
                             <Text style={stylesExpectations.salaryLabel}>До</Text>
-                            <TextInput
-                                style={stylesExpectations.inputSalary}
-                                value={salary[1] ? salary[1].toString() : ''}
-                                onChangeText={handleSalaryToChange}
-                                placeholder="Введите сумму"
-                                placeholderTextColor="#999999"
-                                keyboardType="numeric"
-                            />
+                            <View style={stylesExpectations.salaryInputRow}>
+                                <TextInput
+                                    style={stylesExpectations.salaryInputFlat}
+                                    value={salary[1] ? salary[1].toString() : ''}
+                                    onChangeText={handleSalaryToChange}
+                                    placeholder="Сумма"
+                                    placeholderTextColor="#999999"
+                                    keyboardType="numeric"
+                                />
+                                <Text style={stylesExpectations.salaryCurrency}>₽</Text>
+                            </View>
                         </View>
                         <View style={stylesExpectations.periodWrapper}>
                             <Text style={stylesExpectations.salaryLabel}>Период</Text>

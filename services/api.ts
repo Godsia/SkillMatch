@@ -31,6 +31,38 @@ export const setAccessToken = (token: string | null) => {
 
 export const getAccessToken = (): string | null => accessToken;
 
+// ===== Auth failure handler (e.g. навигация на экран логина) =====
+type AuthFailureHandler = (reason: { status?: number; message?: string; code?: string }) => void;
+let onAuthFailureHandler: AuthFailureHandler | null = null;
+// Защита от шквала параллельных 401/403, которые иначе вызвали бы обработчик многократно
+let isHandlingAuthFailure = false;
+
+/**
+ * Регистрирует глобальный обработчик ошибок авторизации.
+ * Вызывается, когда сервер отвечает 401/403 или 400 с признаком отсутствия пользователя,
+ * чтобы сбросить токен и отправить пользователя на экран логина.
+ */
+export const setOnAuthFailure = (handler: AuthFailureHandler | null) => {
+  onAuthFailureHandler = handler;
+};
+
+/**
+ * Возвращает true, если ошибка axios относится к проблемам авторизации,
+ * при которых нужно отправить пользователя на экран логина.
+ */
+export const isAuthFailureError = (error: any): boolean => {
+  const status = error?.response?.status;
+  if (status === 401 || status === 403) return true;
+  if (status === 400) {
+    const data = error?.response?.data;
+    const message = typeof data?.message === 'string' ? data.message : '';
+    const code = typeof data?.code === 'string' ? data.code : '';
+    if (/user\s*not\s*found/i.test(message)) return true;
+    if (code === 'USER_NOT_FOUND') return true;
+  }
+  return false;
+};
+
 /**
  * Загружает токен из SecureStore в память. Вызывать при старте приложения.
  * @returns сохранённый токен или null
@@ -173,6 +205,31 @@ apiClient.interceptors.response.use(
 
       console.log('   error body:', dataStr);
 
+      // Глобальная обработка ошибок авторизации:
+      // 401/403 или 400 с "User not found" означают, что текущая сессия не валидна —
+      // сбрасываем токен и просим UI отправить пользователя на экран логина.
+      if (isAuthFailureError(error)) {
+        if (!isHandlingAuthFailure) {
+          isHandlingAuthFailure = true;
+          try {
+            setAccessToken(null);
+            const data = error.response?.data;
+            onAuthFailureHandler?.({
+              status,
+              message: typeof data?.message === 'string' ? data.message : undefined,
+              code: typeof data?.code === 'string' ? data.code : undefined,
+            });
+          } catch (e) {
+            console.warn('onAuthFailureHandler выбросил ошибку:', e);
+          } finally {
+            // Сбрасываем флаг через тик, чтобы параллельные запросы не дёргали обработчик повторно
+            setTimeout(() => {
+              isHandlingAuthFailure = false;
+            }, 0);
+          }
+        }
+      }
+
       return Promise.reject(error);
     }
 );
@@ -220,6 +277,7 @@ export interface SetSkillsRequest {
 
 export interface SetPreferencesRequest {
   workFormats: string;
+  employmentTypes: string;
   experienceLevel: string;
   salaryFrom: number;
   salaryTo: number;
@@ -233,6 +291,33 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   accessToken: string;
+  userStatus: string;
+}
+
+export interface PasswordResetInitRequest {
+  email: string;
+}
+
+export interface PasswordResetInitResponse {
+  accessToken: string;
+  userStatus: string;
+  message: string;
+}
+
+export interface PasswordResetVerifyRequest {
+  code: string;
+}
+
+export interface PasswordResetVerifyResponse {
+  userStatus: string;
+}
+
+export interface PasswordResetSetPasswordRequest {
+  password: string;
+  confirmPassword: string;
+}
+
+export interface PasswordResetSetPasswordResponse {
   userStatus: string;
 }
 
@@ -258,6 +343,7 @@ export interface Vacancy {
 
 export interface UserPreferences {
   workFormats: string;
+  employmentTypes: string;
   experienceLevel: string;
   salaryFrom: number;
   salaryTo: number;
@@ -303,6 +389,32 @@ export const authApi = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     const response = await apiClient.post<LoginResponse>('/auth/login', data);
     if (response.data.accessToken) setAccessToken(response.data.accessToken);
+    return response.data;
+  },
+
+  passwordResetInit: async (data: PasswordResetInitRequest): Promise<PasswordResetInitResponse> => {
+    const response = await apiClient.post<PasswordResetInitResponse>('/auth/password-reset/init', data);
+    if (response.data.accessToken) setAccessToken(response.data.accessToken);
+    return response.data;
+  },
+
+  passwordResetVerify: async (
+    data: PasswordResetVerifyRequest
+  ): Promise<PasswordResetVerifyResponse> => {
+    const response = await apiClient.post<PasswordResetVerifyResponse>(
+      '/auth/password-reset/verify',
+      data
+    );
+    return response.data;
+  },
+
+  passwordResetSetPassword: async (
+    data: PasswordResetSetPasswordRequest
+  ): Promise<PasswordResetSetPasswordResponse> => {
+    const response = await apiClient.post<PasswordResetSetPasswordResponse>(
+      '/auth/password-reset/set-password',
+      data
+    );
     return response.data;
   },
 

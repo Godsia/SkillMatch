@@ -1,7 +1,7 @@
 import {View, Text, Pressable, SafeAreaView, StyleSheet, Image, Linking, ActivityIndicator, Alert, Modal, ScrollView} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {useState, useEffect} from 'react';
-import {vacanciesApi, Vacancy, getAccessToken, setAccessToken} from '../../../services/api';
+import {vacanciesApi, Vacancy, getAccessToken, setAccessToken, isAuthFailureError} from '../../../services/api';
 import {styles} from "../../../styles/home";
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import {BlurView} from "expo-blur";
@@ -42,11 +42,9 @@ export default function HomePage() {
             setCurrentIndex(0);
         } catch (error: any) {
             console.error('Ошибка загрузки вакансий:', error);
-            const status = error.response?.status;
-            if (status === 403) {
-                // Токен устарел/не подходит для текущего ресурса — сбрасываем сессию и отправляем на логин.
-                setAccessToken(null);
-                navigation.navigate('Authorization' as never);
+            // Сессия недействительна — глобальный обработчик в services/api.ts
+            // сбросит токен и отправит пользователя на экран логина.
+            if (isAuthFailureError(error)) {
                 return;
             }
             console.error(
@@ -80,16 +78,11 @@ export default function HomePage() {
             }
         } catch (error: any) {
             console.error('Ошибка лайка вакансии:', error);
-            const status = error.response?.status;
-            const message = error.response?.data?.message || error.message || "Не удалось добавить вакансию в избранное.";
-            
-            if (status === 403) {
-                console.warn(
-                    "Ошибка доступа: у вас нет прав для выполнения этого действия. Возможно, требуется повторная авторизация."
-                );
-            } else {
-                console.error("Ошибка:", message);
+            if (isAuthFailureError(error)) {
+                return;
             }
+            const message = error.response?.data?.message || error.message || "Не удалось добавить вакансию в избранное.";
+            console.error("Ошибка:", message);
         } finally {
             setIsProcessing(false);
         }
@@ -118,16 +111,11 @@ export default function HomePage() {
             }
         } catch (error: any) {
             console.error('Ошибка отказа от вакансии:', error);
-            const status = error.response?.status;
-            const message = error.response?.data?.message || error.message || "Не удалось добавить вакансию в архив.";
-            
-            if (status === 403) {
-                console.warn(
-                    "Ошибка доступа: у вас нет прав для выполнения этого действия. Возможно, требуется повторная авторизация."
-                );
-            } else {
-                console.error("Ошибка:", message);
+            if (isAuthFailureError(error)) {
+                return;
             }
+            const message = error.response?.data?.message || error.message || "Не удалось добавить вакансию в архив.";
+            console.error("Ошибка:", message);
         } finally {
             setIsProcessing(false);
         }
@@ -189,19 +177,11 @@ export default function HomePage() {
                     : data?.error || (typeof data === 'string' ? data : null);
             console.error('Ошибка отправки отзыва:', status, data);
 
-            if (status === 403) {
-                Alert.alert(
-                    'Доступ запрещён',
-                    serverMessage ||
-                        'У вас нет прав на отправку отзыва по этой вакансии. Возможно, нужна повторная авторизация.',
-                    [
-                        { text: 'Пропустить', onPress: closeFeedbackModal },
-                        { text: 'Повторить', onPress: () => {} },
-                    ]
-                );
-            } else {
-                console.error('Ошибка:', serverMessage || 'Не удалось отправить отзыв. Попробуйте позже.');
+            if (isAuthFailureError(error)) {
+                return;
             }
+
+            console.error('Ошибка:', serverMessage || 'Не удалось отправить отзыв. Попробуйте позже.');
         } finally {
             setIsSendingFeedback(false);
         }

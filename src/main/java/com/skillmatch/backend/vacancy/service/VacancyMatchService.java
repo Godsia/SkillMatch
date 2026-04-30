@@ -49,13 +49,17 @@ public class VacancyMatchService {
             Map<String, String> empMap = Map.of(
                     "full", "full",
                     "partial", "part",
-                    "projectinformation", "project",
-                    "intership", "probation"
+                    "projectinformation", "side_job,project",
+                    "internship", "probation"
             );
             String[] parts = prefs.getEmploymentTypes().split(",");
             for (String part : parts) {
                 String val = empMap.get(part.trim().toLowerCase());
-                if (val != null) targetEmploymentTypes.add(val);
+                if (val != null) {
+                    for (String v : val.split(",")) {
+                        targetEmploymentTypes.add(v);
+                    }
+                }
             }
         }
 
@@ -105,37 +109,46 @@ public class VacancyMatchService {
             }
 
             if (!targetEmploymentTypes.isEmpty() && v.getEmploymentType() != null) {
-                String vacEmpType = v.getEmploymentType().toLowerCase();
-                if (!targetEmploymentTypes.contains(vacEmpType)) {
+                String[] vacEmpTypes = v.getEmploymentType().toLowerCase().split(",");
+                boolean match = false;
+                for (String vet : vacEmpTypes) {
+                    if (targetEmploymentTypes.contains(vet.trim())) {
+                        match = true;
+                        break;
+                    }
+                }
+                if (!match) {
                     continue;
                 }
             }
 
             if (!targetWorkFormats.isEmpty()) {
+                boolean match = false;
                 if (v.getWorkFormat() != null) {
-                    String vacWorkFormat = v.getWorkFormat().toLowerCase(); // but wfMap values are "fullDay", "REMOTE", "HYBRID"!!!
-                    // Actually we should match ignoring cases
-                    boolean match = false;
-                    for (String twf : targetWorkFormats) {
-                        if (vacWorkFormat.equalsIgnoreCase(twf)) {
-                            match = true;
-                            break;
+                    String[] vacWorkFormats = v.getWorkFormat().split(",");
+                    for (String vwf : vacWorkFormats) {
+                        for (String twf : targetWorkFormats) {
+                            if (vwf.trim().equalsIgnoreCase(twf)) {
+                                match = true;
+                                break;
+                            }
                         }
+                        if (match) break;
                     }
-                    if (!match) continue;
-                } else if (v.getWorkSchedule() != null) {
-                    String vacWorkSchedule = v.getWorkSchedule().toLowerCase();
-                    boolean match = false;
-                    for (String twf : targetWorkFormats) {
-                        if (vacWorkSchedule.equalsIgnoreCase(twf)) {
-                            match = true;
-                            break;
-                        }
-                    }
-                    if (!match) continue;
-                } else {
-                    continue;
                 }
+                if (!match && v.getWorkSchedule() != null) {
+                    String[] vacWorkSchedules = v.getWorkSchedule().split(",");
+                    for (String vws : vacWorkSchedules) {
+                        for (String twf : targetWorkFormats) {
+                            if (vws.trim().equalsIgnoreCase(twf)) {
+                                match = true;
+                                break;
+                            }
+                        }
+                        if (match) break;
+                    }
+                }
+                if (!match) continue;
             }
 
             int total = (v.getSkills() == null) ? 0 : v.getSkills().size();

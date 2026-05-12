@@ -1,4 +1,3 @@
--- vacancies
 CREATE TABLE vacancies (
     id BIGSERIAL PRIMARY KEY,
 

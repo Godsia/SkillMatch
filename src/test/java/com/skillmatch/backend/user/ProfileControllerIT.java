@@ -94,8 +94,6 @@ class ProfileControllerIT {
                 testUser.getId(), null, Collections.emptyList());
     }
 
-    // ── GET /profile/me ───────────────────────────────────────────────
-
     @Test
     void me_ShouldReturnUserProfile() throws Exception {
         mockMvc.perform(get("/profile/me")
@@ -165,8 +163,6 @@ class ProfileControllerIT {
                 .andExpect(status().isForbidden());
     }
 
-    // ── PUT /profile/skills ───────────────────────────────────────────
-
     @Test
     void setSkills_WithCustomSkills_ShouldCreateAndAssign() throws Exception {
         SetSkillsRequest req = new SetSkillsRequest(List.of(
@@ -210,7 +206,6 @@ class ProfileControllerIT {
 
     @Test
     void setSkills_ReplacePrevious_ShouldRemoveOldOnes() throws Exception {
-        // Сначала назначаем Java
         Skill java = new Skill();
         java.setName("Java");
         java = skillRepository.save(java);
@@ -220,7 +215,6 @@ class ProfileControllerIT {
         us.setSkillId(java.getId());
         userSkillRepository.save(us);
 
-        // Теперь заменяем на Go
         SetSkillsRequest req = new SetSkillsRequest(List.of(
                 new SetSkillsRequest.SkillItem(null, "Go")
         ));
@@ -238,11 +232,8 @@ class ProfileControllerIT {
         assertThat(skills.get(0).getSkillId()).isEqualTo(go.getId());
     }
 
-    // ── PUT /profile/preferences ──────────────────────────────────────
-
     @Test
     void setPreferences_ShouldSaveAndActivateUser() throws Exception {
-        // Пользователь с EMAIL_CONFIRMED статусом
         testUser.setStatus(UserStatus.EMAIL_CONFIRMED);
         testUser = userRepository.save(testUser);
 
@@ -268,7 +259,6 @@ class ProfileControllerIT {
 
     @Test
     void setPreferences_UpdateExisting_ShouldOverwrite() throws Exception {
-        // Создаём начальные предпочтения
         UserPreferences prefs = new UserPreferences();
         prefs.setUserId(testUser.getId());
         prefs.setWorkFormats("office");
@@ -278,7 +268,6 @@ class ProfileControllerIT {
         prefs.setSalaryPeriod("month");
         userPreferencesRepository.save(prefs);
 
-        // Обновляем
         SetPreferencesRequest req = new SetPreferencesRequest(
                 "hybrid", "full", "middle", 100000, 180000, "month"
         );

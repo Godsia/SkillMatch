@@ -13,11 +13,6 @@ public class HhImportRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        
-        
-        
-        
-
         if (args.containsOption("import-hh-design")) {
             int maxPages = optInt(args, "maxPages", 10);
             int maxDetails = optInt(args, "maxDetails", 300);

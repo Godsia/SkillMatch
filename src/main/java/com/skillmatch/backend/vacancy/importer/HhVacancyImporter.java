@@ -35,7 +35,10 @@ public class HhVacancyImporter {
 
     private static final String BASE = "https://api.hh.ru/vacancies";
 
-    
+    private static final String CLIENT_ID = "VCOSMUS54NDLBQULQLLVE521J3T4CNHJUV12BSVIC8JQ47FQJ44FV3CJ7OEDV4GP";
+    private static final String CLIENT_SECRET = "T2AAP5ICNAOPDE2RARB4FGCOF96CA9DL68270JJDN9TF4RP67ORAEL7AIABKURG4";
+    private static final String TOKEN_URL = "https://hh.ru/oauth/token";
+
     private static final int DEFAULT_AREA = 1;
     private static final int DEFAULT_PER_PAGE = 50;
 
@@ -52,6 +55,9 @@ public class HhVacancyImporter {
     private int captchaStreak = 0;
     private int rateLimitStreak = 0;
 
+    private String accessToken = null;
+    private Instant tokenExpiresAt = Instant.MIN;
+
     private static final int DETAIL_SLEEP_BASE_MS = 1200;
     private static final int DETAIL_SLEEP_JITTER_MS = 900;
 
@@ -64,14 +70,45 @@ public class HhVacancyImporter {
     private final VacancyRepository vacancyRepository;
     private final SkillRepository skillRepository;
 
-    private static HttpRequest.Builder withHHHeaders(HttpRequest.Builder b) {
-        return b.header("User-Agent", UA)
-                .header("HH-User-Agent", UA)
-                .header("Accept", "application/json");
+    private HttpRequest.Builder withHHHeaders(HttpRequest.Builder b) {
+        ensureToken();
+        b.header("User-Agent", UA)
+         .header("HH-User-Agent", UA)
+         .header("Accept", "application/json");
+        if (accessToken != null) {
+            b.header("Authorization", "Bearer " + accessToken);
+        }
+        return b;
+    }
+
+    private synchronized void ensureToken() {
+        if (accessToken != null && Instant.now().isBefore(tokenExpiresAt.minusSeconds(60))) {
+            return;
+        }
+        try {
+            String body = "grant_type=client_credentials&client_id=" + CLIENT_ID + "&client_secret=" + CLIENT_SECRET;
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(TOKEN_URL))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .header("User-Agent", UA)
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+            HttpResponse<String> response = CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                TokenResponse tr = MAPPER.readValue(response.body(), TokenResponse.class);
+                accessToken = tr.access_token;
+                tokenExpiresAt = Instant.now().plusSeconds(tr.expires_in);
+            } else {
+                System.err.println("Failed to get HH token: " + response.statusCode() + " " + response.body());
+            }
+        } catch (Exception e) {
+            System.err.println("Error fetching HH token: " + e.getMessage());
+        }
     }
 
     public ImportStats importDesignerDefaults(int maxPages, int maxDetails) throws IOException, InterruptedException {
-        
+
         return importByText("дизайн", DEFAULT_AREA, DEFAULT_PER_PAGE, maxPages, maxDetails);
     }
 
@@ -148,12 +185,11 @@ public class HhVacancyImporter {
 
         String encoded = URLEncoder.encode(text, StandardCharsets.UTF_8);
 
-        
         String url = BASE
                 + "?text=" + encoded
                 + "&search_field=name&search_field=description"
                 + "&area=" + area
-                + "&order_by=relevance"
+                + "&order_by=publication_time"
                 + "&per_page=" + perPage
                 + "&page=" + page;
 
@@ -246,7 +282,8 @@ public class HhVacancyImporter {
         }
 
         String exp = detail.experience != null ? detail.experience.id : null;
-        String empType = detail.employment != null ? detail.employment.id : null;
+        String empType = detail.employment_form != null ? detail.employment_form.id :
+                (detail.employment != null ? detail.employment.id : null);
         String sch = detail.schedule != null ? detail.schedule.id : null;
 
         Vacancy v = Vacancy.builder()
@@ -374,6 +411,7 @@ public class HhVacancyImporter {
 
         public IdNameItem experience;
         public IdNameItem employment;
+        public IdNameItem employment_form;
         public IdNameItem schedule;
 
         @JsonProperty("work_format")
@@ -422,6 +460,12 @@ public class HhVacancyImporter {
     @JsonIgnoreProperties(ignoreUnknown = true)
     static class SkillDto {
         public String name;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    static class TokenResponse {
+        public String access_token;
+        public long expires_in;
     }
 
     enum DetailFetchResult {

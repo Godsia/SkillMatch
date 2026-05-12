@@ -116,13 +116,12 @@ class VacancyLikeServiceIT {
                 .findByUserIdAndVacancyId(userId, testVacancy.getId()).orElseThrow();
         assertThat(original.isLiked()).isTrue();
 
-        // Меняем на дизлайк
         vacancyLikeService.setLike(userId, testVacancy.getId(), false);
 
         UserVacancyLike updated = userVacancyLikeRepository
                 .findByUserIdAndVacancyId(userId, testVacancy.getId()).orElseThrow();
         assertThat(updated.isLiked()).isFalse();
-        assertThat(updated.getId()).isEqualTo(original.getId()); // тот же ID — обновление, а не дубликат
+        assertThat(updated.getId()).isEqualTo(original.getId());
     }
 
     @Test

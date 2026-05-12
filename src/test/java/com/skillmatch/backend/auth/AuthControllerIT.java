@@ -81,8 +81,6 @@ class AuthControllerIT {
         userRepository.deleteAll();
     }
 
-    // ── Registration ──────────────────────────────────────────────────
-
     @Test
     void registerInit_ShouldCreateNewUserAndReturnToken() throws Exception {
         RegisterInitRequest req = new RegisterInitRequest(
@@ -103,7 +101,6 @@ class AuthControllerIT {
 
     @Test
     void registerInit_DuplicateActiveEmail_ShouldReturnBadRequest() throws Exception {
-        // Создаём активного пользователя
         User u = new User();
         u.setEmail("active@example.com");
         u.setPasswordHash("hashed");
@@ -124,7 +121,6 @@ class AuthControllerIT {
 
     @Test
     void registerInit_ReRegisterUnconfirmedEmail_ShouldSucceed() throws Exception {
-        // Создаём пользователя со статусом NEW
         User u = new User();
         u.setEmail("unconfirmed@example.com");
         u.setStatus(UserStatus.NEW);
@@ -144,8 +140,6 @@ class AuthControllerIT {
         User updated = userRepository.findByEmail("unconfirmed@example.com").orElseThrow();
         assertThat(updated.getFirstName()).isEqualTo("Petr");
     }
-
-    // ── Verify Email ──────────────────────────────────────────────────
 
     @Test
     void verifyEmail_ValidCode_ShouldConfirmEmail() throws Exception {
@@ -209,7 +203,7 @@ class AuthControllerIT {
         EmailVerificationCode code = new EmailVerificationCode();
         code.setUserId(u.getId());
         code.setCode("123456");
-        code.setExpiresAt(Instant.now().minus(1, ChronoUnit.MINUTES)); // уже истёк
+        code.setExpiresAt(Instant.now().minus(1, ChronoUnit.MINUTES));
         emailCodeRepository.save(code);
 
         Authentication auth = new UsernamePasswordAuthenticationToken(
@@ -224,8 +218,6 @@ class AuthControllerIT {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Code expired"));
     }
-
-    // ── Set Password ──────────────────────────────────────────────────
 
     @Test
     void setPassword_ShouldActivateUser() throws Exception {
@@ -271,7 +263,6 @@ class AuthControllerIT {
                 .andExpect(jsonPath("$.message").value("Passwords do not match"));
     }
 
-    // ── Login ─────────────────────────────────────────────────────────
 
     @Test
     void login_ValidCredentials_ShouldReturnToken() throws Exception {

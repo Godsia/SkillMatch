@@ -98,7 +98,6 @@ class VacancyMatchServiceIT {
         pythonSkill.setName("Python");
         pythonSkill = skillRepository.save(pythonSkill);
 
-        // Пользователь знает Java и Spring
         addUserSkill(userId, javaSkill.getId());
         addUserSkill(userId, springSkill.getId());
     }
@@ -125,8 +124,6 @@ class VacancyMatchServiceIT {
         return vacancyRepository.save(v);
     }
 
-    // ── listMatchesForUser ────────────────────────────────────────────
-
     @Test
     void listMatches_ShouldReturnAllVacancies_WhenNoInteractions() {
         createVacancy("Java Dev", "m-001", Set.of(javaSkill, springSkill), Instant.now());
@@ -139,13 +136,10 @@ class VacancyMatchServiceIT {
 
     @Test
     void listMatches_ShouldSortByMatchPercentDescending() {
-        // Вакансия с Java+Spring — 100% match для нашего пользователя
         createVacancy("Full match", "m-003",
                 Set.of(javaSkill, springSkill), Instant.now());
-        // Вакансия с Python — 0% match
         createVacancy("No match", "m-004",
                 Set.of(pythonSkill), Instant.now());
-        // Вакансия с Java+Python — 50% match
         createVacancy("Partial match", "m-005",
                 Set.of(javaSkill, pythonSkill), Instant.now());
 
@@ -159,7 +153,6 @@ class VacancyMatchServiceIT {
 
     @Test
     void listMatches_ShouldCalculateMatchPercentCorrectly() {
-        // Пользователь знает Java и Spring, вакансия требует Java + Spring + Python
         createVacancy("2 of 3", "m-006",
                 Set.of(javaSkill, springSkill, pythonSkill), Instant.now());
 
@@ -175,7 +168,6 @@ class VacancyMatchServiceIT {
         Vacancy liked = createVacancy("Liked", "m-007", Set.of(javaSkill), Instant.now());
         createVacancy("Unseen", "m-008", Set.of(pythonSkill), Instant.now());
 
-        // Лайкаем первую вакансию
         UserVacancyLike like = UserVacancyLike.builder()
                 .userId(userId)
                 .vacancyId(liked.getId())
@@ -198,8 +190,6 @@ class VacancyMatchServiceIT {
         assertThat(matches).hasSize(1);
         assertThat(matches.get(0).getMatchPercent()).isEqualTo(0.0);
     }
-
-    // ── listLikedForUser ──────────────────────────────────────────────
 
     @Test
     void listLiked_ShouldReturnOnlyLikedVacancies() {
@@ -224,7 +214,6 @@ class VacancyMatchServiceIT {
         assertThat(liked).isEmpty();
     }
 
-    // ── listDislikedForUser ───────────────────────────────────────────
 
     @Test
     void listDisliked_ShouldReturnOnlyDislikedVacancies() {

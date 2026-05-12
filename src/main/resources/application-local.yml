@@ -9,12 +9,9 @@ spring:
       ddl-auto: validate
     show-sql: false
 
-# В локалке не отправляем emails (JavaMailSender подменяется на no-op Bean).
-
 skillmatch:
   hh-import:
     enabled: true
-    # на каждое срабатывание (раз в 30 мин) будет пытаться взять до 75 новых детальных вакансий
     maxPages: 3
     maxDetails: 75
     fixedDelayMs: 1800000

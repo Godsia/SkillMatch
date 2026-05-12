@@ -102,8 +102,6 @@ class VacancyFeedbackControllerIT {
                 testUserId, null, Collections.emptyList());
     }
 
-    // ── POST /vacancies/{id}/feedback ─────────────────────────────────
-
     @Test
     void feedback_ShouldSaveNewFeedback() throws Exception {
         VacancyFeedbackRequest req = new VacancyFeedbackRequest();
@@ -125,7 +123,6 @@ class VacancyFeedbackControllerIT {
 
     @Test
     void feedback_UpdateExisting_ShouldOverwrite() throws Exception {
-        // Первый фидбэк
         VacancyFeedbackRequest req1 = new VacancyFeedbackRequest();
         req1.setLikedMatching(true);
         req1.setRating(3);
@@ -136,7 +133,6 @@ class VacancyFeedbackControllerIT {
                         .content(objectMapper.writeValueAsString(req1)))
                 .andExpect(status().isOk());
 
-        // Обновляем фидбэк
         VacancyFeedbackRequest req2 = new VacancyFeedbackRequest();
         req2.setLikedMatching(false);
         req2.setRating(5);
@@ -158,7 +154,7 @@ class VacancyFeedbackControllerIT {
     void feedback_InvalidRating_ShouldReturn400() throws Exception {
         VacancyFeedbackRequest req = new VacancyFeedbackRequest();
         req.setLikedMatching(true);
-        req.setRating(0); // ниже допустимого
+        req.setRating(0);
 
         mockMvc.perform(post("/vacancies/" + testVacancy.getId() + "/feedback")
                         .with(authentication(auth()))
@@ -181,11 +177,8 @@ class VacancyFeedbackControllerIT {
                 .andExpect(jsonPath("$.message").value("Vacancy not found"));
     }
 
-    // ── GET /vacancies/feedback ───────────────────────────────────────
-
     @Test
     void allFeedback_ShouldReturnUserFeedbacks() throws Exception {
-        // Создадим вторую вакансию
         Vacancy v2 = Vacancy.builder()
                 .source("hh.ru")
                 .sourceVacancyId("fb-002")
@@ -197,7 +190,6 @@ class VacancyFeedbackControllerIT {
                 .build();
         v2 = vacancyRepository.save(v2);
 
-        // Два фидбэка
         VacancyFeedback f1 = VacancyFeedback.builder()
                 .userId(testUserId)
                 .vacancyId(testVacancy.getId())
@@ -232,7 +224,6 @@ class VacancyFeedbackControllerIT {
 
     @Test
     void allFeedback_ShouldNotReturnOtherUsersFeedback() throws Exception {
-        // Создаём фидбэк от другого пользователя
         User otherUser = new User();
         otherUser.setEmail("other_feedback@example.com");
         otherUser.setPasswordHash("hashed");
@@ -247,7 +238,6 @@ class VacancyFeedbackControllerIT {
                 .build();
         vacancyFeedbackRepository.save(otherFeedback);
 
-        // Наш пользователь не должен видеть чужие фидбэки
         mockMvc.perform(get("/vacancies/feedback")
                         .with(authentication(auth())))
                 .andExpect(status().isOk())

@@ -11,11 +11,9 @@ import lombok.*;
 @AllArgsConstructor
 public class VacancyFeedbackRequest {
 
-    /** Понравился ли процесс мэтчинга */
     @NotNull
     private Boolean likedMatching;
 
-    /** Оценка соответствия вакансии запросам пользователя (1–5) */
     @NotNull
     @Min(1)
     @Max(5)

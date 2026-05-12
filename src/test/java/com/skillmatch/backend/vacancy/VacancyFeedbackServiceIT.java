@@ -85,8 +85,6 @@ class VacancyFeedbackServiceIT {
         testVacancy = vacancyRepository.save(testVacancy);
     }
 
-    // ── saveFeedback ──────────────────────────────────────────────────
-
     @Test
     void saveFeedback_ShouldCreateNewRecord() {
         vacancyFeedbackService.saveFeedback(userId, testVacancy.getId(), true, 4);
@@ -143,7 +141,6 @@ class VacancyFeedbackServiceIT {
                 .orElseThrow().getRating()).isEqualTo(5);
     }
 
-    // ── getAllFeedback ─────────────────────────────────────────────────
 
     @Test
     void getAllFeedback_ShouldReturnAllForUser() {

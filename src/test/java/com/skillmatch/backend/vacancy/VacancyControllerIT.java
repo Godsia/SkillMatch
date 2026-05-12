@@ -100,8 +100,6 @@ class VacancyControllerIT {
                         .with(authentication(getAuthentication())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                // В зависимости от логики мачтинга, тут может быть пусто или нет.
-                // Пока просто проверяем, что статус 200 и массив.
         ;
     }
 
@@ -115,7 +113,6 @@ class VacancyControllerIT {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
-        // Проверяем, что теперь вакансия в списке лайкнутых
         mockMvc.perform(get("/vacancies/liked")
                         .with(authentication(getAuthentication())))
                 .andExpect(status().isOk())
@@ -133,7 +130,6 @@ class VacancyControllerIT {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
-        // Проверяем, что теперь вакансия в списке дизлайкнутых
         mockMvc.perform(get("/vacancies/disliked")
                         .with(authentication(getAuthentication())))
                 .andExpect(status().isOk())
@@ -143,7 +139,6 @@ class VacancyControllerIT {
 
     @Test
     void matches_ShouldNotReturnLikedOrDisliked() throws Exception {
-        // Сначала лайкнем
         VacancyLikeRequest request = new VacancyLikeRequest(true);
         mockMvc.perform(post("/vacancies/" + testVacancy.getId() + "/like")
                         .with(authentication(getAuthentication()))
@@ -151,10 +146,6 @@ class VacancyControllerIT {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
-        // Теперь проверим matches - эта вакансия не должна там быть, если логика
-        // сервиса matches исключает уже оценённые вакансии (что разумно).
-        // Но так как я не вижу код VacancyMatchService, я не могу быть уверен.
-        // Оставим этот тест простым: запуск endpoint'а.
 
         mockMvc.perform(get("/vacancies/matches")
                         .with(authentication(getAuthentication())))

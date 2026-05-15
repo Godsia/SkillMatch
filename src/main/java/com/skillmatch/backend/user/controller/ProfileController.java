@@ -31,4 +31,10 @@ public class ProfileController {
         Long userId = (Long) auth.getPrincipal();
         profileService.setPreferences(userId, req);
     }
+
+    @DeleteMapping("/me")
+    public void deleteAccount(Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        profileService.deleteAccount(userId);
+    }
 }

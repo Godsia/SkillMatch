@@ -129,4 +129,12 @@ public class ProfileService {
         userRepository.save(u);
         log.info("Preferences updated, user is now ACTIVE userId={}", userId);
     }
+
+    @Transactional
+    public void deleteAccount(Long userId) {
+        log.info("Deleting account userId={}", userId);
+        User u = userRepository.findById(userId).orElseThrow(() -> new ApiException("User not found"));
+        userRepository.delete(u);
+        log.info("Account deleted userId={}", userId);
+    }
 }

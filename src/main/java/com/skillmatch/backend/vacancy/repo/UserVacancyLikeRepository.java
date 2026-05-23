@@ -10,6 +10,12 @@ import java.util.Optional;
 
 public interface UserVacancyLikeRepository extends JpaRepository<UserVacancyLike, Long> {
 
+    long countByUserId(Long userId);
+
+    long countByUserIdAndLikedTrue(Long userId);
+
+    long countByUserIdAndLikedFalse(Long userId);
+
     Optional<UserVacancyLike> findByUserIdAndVacancyId(Long userId, Long vacancyId);
 
     @Query("select l.vacancyId from UserVacancyLike l where l.userId = :userId and l.liked = true")

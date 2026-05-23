@@ -267,7 +267,7 @@ public class HhVacancyImporter {
         String plainDesc = stripHtml(rawDesc);
 
         String title = truncate(safe(detail.name), 250);
-        String briefDesc = truncate(plainDesc, 250);
+        String briefDesc = plainDesc;
 
         String logoUrl = pickEmployerLogoUrl(detail.employer);
 
@@ -328,8 +328,14 @@ public class HhVacancyImporter {
     private static Instant parseInstant(String s) {
         if (s == null || s.isBlank()) return null;
         try {
+            // HH dates look like: "2024-03-12T10:15:30+0300"
+            // We inject the colon so it becomes ISO-8601 strict: "2024-03-12T10:15:30+03:00"
+            if (s.length() == 24 && (s.charAt(19) == '+' || s.charAt(19) == '-')) {
+                s = s.substring(0, 22) + ":" + s.substring(22);
+            }
             return Instant.parse(s);
         } catch (Exception e) {
+            System.err.println("Ошибка парсинга published_at '" + s + "': " + e.getMessage());
             return null;
         }
     }

@@ -189,7 +189,7 @@ public class HhVacancyImporter {
                 + "?text=" + encoded
                 + "&search_field=name&search_field=description"
                 + "&area=" + area
-                + "&order_by=publication_time"
+                + "&order_by=relevance"
                 + "&per_page=" + perPage
                 + "&page=" + page;
 

@@ -4,6 +4,11 @@ import com.skillmatch.backend.user.repo.SkillAnalyticsProjection;
 import com.skillmatch.backend.user.repo.SkillRepository;
 import com.skillmatch.backend.vacancy.dto.SkillDemandDto;
 import com.skillmatch.backend.vacancy.dto.UserInteractionAnalyticsDto;
+import com.skillmatch.backend.vacancy.dto.VacancyMatchStatsDto;
+import com.skillmatch.backend.vacancy.dto.VacancyMatchResponse;
+import com.skillmatch.backend.vacancy.model.Vacancy;
+import com.skillmatch.backend.user.repo.UserSkillRepository;
+import com.skillmatch.backend.vacancy.repo.VacancyRepository;
 import com.skillmatch.backend.vacancy.repo.UserVacancyLikeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +24,9 @@ public class SkillAnalyticsService {
 
     private final SkillRepository skillRepository;
     private final UserVacancyLikeRepository userVacancyLikeRepository;
+    private final VacancyRepository vacancyRepository;
+    private final UserSkillRepository userSkillRepository;
+    private final VacancyMatchService vacancyMatchService;
 
     public List<SkillDemandDto> getTop10SkillsAllTime() {
         long totalSkillsAllTime = skillRepository.countAllVacancySkills();
@@ -74,6 +82,17 @@ public class SkillAnalyticsService {
                 .totalDisliked(totalDisliked)
                 .percentLiked(Math.round(percentLiked * 100.0) / 100.0)
                 .percentDisliked(Math.round(percentDisliked * 100.0) / 100.0)
+                .build();
+    }
+
+    public VacancyMatchStatsDto getVacancyMatchStats(Long userId) {
+        long totalVacancies = vacancyRepository.count();
+
+        long matchingCount = vacancyMatchService.countMatchesForUser(userId);
+
+        return VacancyMatchStatsDto.builder()
+                .totalVacancies(totalVacancies)
+                .matchingCount(matchingCount)
                 .build();
     }
 }

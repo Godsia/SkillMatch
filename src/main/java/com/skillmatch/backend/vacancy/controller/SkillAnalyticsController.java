@@ -2,6 +2,7 @@ package com.skillmatch.backend.vacancy.controller;
 
 import com.skillmatch.backend.vacancy.dto.SkillDemandDto;
 import com.skillmatch.backend.vacancy.dto.UserInteractionAnalyticsDto;
+import com.skillmatch.backend.vacancy.dto.VacancyMatchStatsDto;
 import com.skillmatch.backend.vacancy.service.SkillAnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -32,5 +33,11 @@ public class SkillAnalyticsController {
     public UserInteractionAnalyticsDto getUserInteractions(Authentication auth) {
         Long userId = (Long) auth.getPrincipal();
         return skillAnalyticsService.getUserInteractionAnalytics(userId);
+    }
+
+    @GetMapping("/match-stats")
+    public VacancyMatchStatsDto getMatchStats(Authentication auth) {
+        Long userId = (Long) auth.getPrincipal();
+        return skillAnalyticsService.getVacancyMatchStats(userId);
     }
 }

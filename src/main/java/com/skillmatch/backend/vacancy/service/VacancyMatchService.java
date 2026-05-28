@@ -5,6 +5,7 @@ import com.skillmatch.backend.user.repo.UserPreferencesRepository;
 import com.skillmatch.backend.user.model.UserPreferences;
 import com.skillmatch.backend.vacancy.dto.VacancyMatchResponse;
 import com.skillmatch.backend.vacancy.model.Vacancy;
+import com.skillmatch.backend.vacancy.repo.VacancyMatchProjection;
 import com.skillmatch.backend.vacancy.repo.VacancyRepository;
 import com.skillmatch.backend.vacancy.repo.UserVacancyLikeRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,170 @@ public class VacancyMatchService {
     private final UserSkillRepository userSkillRepository;
     private final UserVacancyLikeRepository userVacancyLikeRepository;
     private final UserPreferencesRepository userPreferencesRepository;
+
+    public long countMatchesForUser(Long userId) {
+        Set<Long> userSkillIds = userSkillRepository.findAllByUserId(userId).stream()
+                .map(us -> us.getSkillId())
+                .collect(Collectors.toSet());
+
+        UserPreferences prefs = userPreferencesRepository.findById(userId).orElse(null);
+
+        String targetHhExp = null;
+        if (prefs != null && prefs.getExperienceLevel() != null && !prefs.getExperienceLevel().isBlank()) {
+            Map<String, String> expMap = Map.of(
+                    "junior", "noExperience",
+                    "middle", "between1And3",
+                    "senior", "between3And6",
+                    "leader", "moreThan6"
+            );
+            targetHhExp = expMap.get(prefs.getExperienceLevel().toLowerCase());
+        }
+
+        Set<String> targetEmploymentTypes = new HashSet<>();
+        if (prefs != null && prefs.getEmploymentTypes() != null && !prefs.getEmploymentTypes().isBlank()) {
+            Map<String, String> empMap = Map.of(
+                    "full", "full",
+                    "partial", "part",
+                    "projectinformation", "side_job,project",
+                    "internship", "probation"
+            );
+            String[] parts = prefs.getEmploymentTypes().split(",");
+            for (String part : parts) {
+                String val = empMap.get(part.trim().toLowerCase());
+                if (val != null) {
+                    for (String v : val.split(",")) {
+                        targetEmploymentTypes.add(v);
+                    }
+                }
+            }
+        }
+
+        Set<String> targetWorkFormats = new HashSet<>();
+        if (prefs != null && prefs.getWorkFormats() != null && !prefs.getWorkFormats().isBlank()) {
+            Map<String, String> wfMap = Map.of(
+                    "standart", "ON_SITE",
+                    "online", "REMOTE",
+                    "hybrid", "HYBRID"
+            );
+            String[] parts = prefs.getWorkFormats().split(",");
+            for (String part : parts) {
+                String val = wfMap.get(part.trim().toLowerCase());
+                if (val != null) targetWorkFormats.add(val);
+            }
+        }
+
+        int reqSalFrom = (prefs != null && prefs.getSalaryFrom() != null) ? prefs.getSalaryFrom() : 0;
+        int reqSalTo = (prefs != null && prefs.getSalaryTo() != null && prefs.getSalaryTo() > 0) ? prefs.getSalaryTo() : Integer.MAX_VALUE;
+
+        List<Long> interactedIds = userVacancyLikeRepository.findInteractedVacancyIds(userId);
+
+        List<VacancyMatchProjection> projections = interactedIds.isEmpty()
+                ? vacancyRepository.findAllVacancyMatchInfo()
+                : vacancyRepository.findVacancyMatchInfoNotIn(interactedIds);
+
+        class VInfo {
+            String experienceLevel;
+            Integer salaryFrom;
+            Integer salaryTo;
+            String employmentType;
+            String workFormat;
+            String workSchedule;
+            int totalSkills = 0;
+            int overlap = 0;
+        }
+
+        Map<Long, VInfo> map = new HashMap<>();
+        for (var p : projections) {
+            VInfo info = map.computeIfAbsent(p.getId(), k -> {
+                VInfo i = new VInfo();
+                i.experienceLevel = p.getExperienceLevel();
+                i.salaryFrom = p.getSalaryFrom();
+                i.salaryTo = p.getSalaryTo();
+                i.employmentType = p.getEmploymentType();
+                i.workFormat = p.getWorkFormat();
+                i.workSchedule = p.getWorkSchedule();
+                return i;
+            });
+
+            if (p.getSkillId() != null) {
+                info.totalSkills++;
+                if (userSkillIds.contains(p.getSkillId())) {
+                    info.overlap++;
+                }
+            }
+        }
+
+        long count = 0;
+
+        for (VInfo v : map.values()) {
+            if (targetHhExp != null) {
+                if (!targetHhExp.equals(v.experienceLevel)) {
+                    continue;
+                }
+            }
+
+            if (reqSalFrom > 0 || reqSalTo < Integer.MAX_VALUE) {
+                int vacSalFrom = (v.salaryFrom != null) ? v.salaryFrom : 0;
+                int vacSalTo = (v.salaryTo != null && v.salaryTo > 0) ? v.salaryTo : Integer.MAX_VALUE;
+
+                int maxFrom = Math.max(reqSalFrom, vacSalFrom);
+                int minTo = Math.min(reqSalTo, vacSalTo);
+
+                if (maxFrom > minTo) {
+                    continue;
+                }
+            }
+
+            if (!targetEmploymentTypes.isEmpty() && v.employmentType != null) {
+                String[] vacEmpTypes = v.employmentType.toLowerCase().split(",");
+                boolean match = false;
+                for (String vet : vacEmpTypes) {
+                    if (targetEmploymentTypes.contains(vet.trim())) {
+                        match = true;
+                        break;
+                    }
+                }
+                if (!match) {
+                    continue;
+                }
+            }
+
+            if (!targetWorkFormats.isEmpty()) {
+                boolean match = false;
+                if (v.workFormat != null) {
+                    String[] vacWorkFormats = v.workFormat.split(",");
+                    for (String vwf : vacWorkFormats) {
+                        for (String twf : targetWorkFormats) {
+                            if (vwf.trim().equalsIgnoreCase(twf)) {
+                                match = true;
+                                break;
+                            }
+                        }
+                        if (match) break;
+                    }
+                }
+                if (!match && v.workSchedule != null) {
+                    String[] vacWorkSchedules = v.workSchedule.split(",");
+                    for (String vws : vacWorkSchedules) {
+                        for (String twf : targetWorkFormats) {
+                            if (vws.trim().equalsIgnoreCase(twf)) {
+                                match = true;
+                                break;
+                            }
+                        }
+                        if (match) break;
+                    }
+                }
+                if (!match) continue;
+            }
+
+            double matchPercent = (v.totalSkills == 0) ? 0.0 : (100.0 * v.overlap / (double) v.totalSkills);
+            if (matchPercent >= 50.0) {
+                count++;
+            }
+        }
+        return count;
+    }
 
     public List<VacancyMatchResponse> listMatchesForUser(Long userId) {
         log.info("Listing vacancy matches userId={}", userId);

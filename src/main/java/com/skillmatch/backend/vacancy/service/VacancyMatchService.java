@@ -79,11 +79,7 @@ public class VacancyMatchService {
         int reqSalFrom = (prefs != null && prefs.getSalaryFrom() != null) ? prefs.getSalaryFrom() : 0;
         int reqSalTo = (prefs != null && prefs.getSalaryTo() != null && prefs.getSalaryTo() > 0) ? prefs.getSalaryTo() : Integer.MAX_VALUE;
 
-        List<Long> interactedIds = userVacancyLikeRepository.findInteractedVacancyIds(userId);
-
-        List<VacancyMatchProjection> projections = interactedIds.isEmpty()
-                ? vacancyRepository.findAllVacancyMatchInfo()
-                : vacancyRepository.findVacancyMatchInfoNotIn(interactedIds);
+        List<VacancyMatchProjection> projections = vacancyRepository.findAllVacancyMatchInfo();
 
         class VInfo {
             String experienceLevel;

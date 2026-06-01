@@ -18,10 +18,10 @@ public class HhImportScheduler {
 
     private final HhVacancyImporter importer;
 
-    @Value("${skillmatch.hh-import.maxPages:3}")
+    @Value("${skillmatch.hh-import.maxPages:0}")
     private int maxPages;
 
-    @Value("${skillmatch.hh-import.maxDetails:75}")
+    @Value("${skillmatch.hh-import.maxDetails:0}")
     private int maxDetails;
 
     private final AtomicBoolean running = new AtomicBoolean(false);

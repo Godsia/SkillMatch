@@ -1,9 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/skillmatch
+    url: ${SPRING_DATASOURCE_URL} # Вместо jdbc:postgresql://postgres:5432/skillmatch
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
-
   jpa:
     hibernate:
       ddl-auto: validate
@@ -12,8 +11,8 @@ spring:
 skillmatch:
   hh-import:
     enabled: true
-    maxPages: 3
-    maxDetails: 75
+    maxPages: 0
+    maxDetails: 0
     fixedDelayMs: 1800000
     initialDelayMs: 15000
 

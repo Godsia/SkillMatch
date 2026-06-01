@@ -10,7 +10,6 @@ import com.skillmatch.backend.vacancy.model.Vacancy;
 import com.skillmatch.backend.vacancy.repo.VacancyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.URI;
@@ -116,6 +115,7 @@ public class HhVacancyImporter {
             throws IOException, InterruptedException {
 
         if (perPage <= 0) perPage = DEFAULT_PER_PAGE;
+        boolean unlimitedDetails = maxDetails <= 0;
 
         List<String> ids = searchVacanciesPaginated(text, area, perPage, maxPages);
 
@@ -125,7 +125,7 @@ public class HhVacancyImporter {
         int processedNew = 0;
 
         for (String hhId : ids) {
-            if (processedNew >= maxDetails) break;
+            if (!unlimitedDetails && processedNew >= maxDetails) break;
 
             
             if (vacancyRepository.existsBySourceAndSourceVacancyId(SOURCE, hhId)) {
@@ -157,24 +157,28 @@ public class HhVacancyImporter {
             throws IOException, InterruptedException {
 
         List<String> all = new ArrayList<>();
-        Integer totalPagesFromApi = null;
 
-        for (int page = 0; page < maxPages; page++) {
-            SearchResponse sr = searchVacanciesRaw(text, area, perPage, page);
+        SearchResponse init = searchVacanciesRaw(text, area, perPage, 0);
+        if (init.pages == 0) {
+            return all;
+        }
 
-            if (totalPagesFromApi == null) {
-                totalPagesFromApi = sr.pages;
-            }
+        // HH API limit is usually 2000 items. Max page = 1999 / perPage
+        int maxAvailablePage = Math.min(init.pages - 1, 1999 / perPage);
+        int pagesToFetch = (maxPages <= 0)
+                ? (maxAvailablePage + 1)
+                : Math.min(maxPages, maxAvailablePage + 1);
+
+        for (int page = 0; page < pagesToFetch; page++) {
+            SearchResponse sr = (page == 0) ? init : searchVacanciesRaw(text, area, perPage, page);
 
             List<VacancyItem> items = (sr.items != null) ? sr.items : List.of();
-            for (VacancyItem it : items) {
+            for (int i = items.size() - 1; i >= 0; i--) {
+                VacancyItem it = items.get(i);
                 if (it != null && it.id != null) all.add(it.id);
             }
 
-            if (totalPagesFromApi != null && page + 1 >= totalPagesFromApi) break;
-            if (items.isEmpty()) break;
-
-            sleepJitter(400, 300);
+            if (page + 1 < pagesToFetch) sleepJitter(400, 300);
         }
 
         return all;
@@ -189,7 +193,7 @@ public class HhVacancyImporter {
                 + "?text=" + encoded
                 + "&search_field=name&search_field=description"
                 + "&area=" + area
-                + "&order_by=relevance"
+                + "&order_by=publication_time"
                 + "&per_page=" + perPage
                 + "&page=" + page;
 
@@ -260,15 +264,12 @@ public class HhVacancyImporter {
         return DetailFetchResult.SAVED;
     }
 
-    @Transactional
-    protected void saveToDb(String hhId, VacancyDetail detail) {
+    private void saveToDb(String hhId, VacancyDetail detail) {
 
         String rawDesc = detail.description == null ? "" : detail.description;
         String plainDesc = stripHtml(rawDesc);
 
         String title = truncate(safe(detail.name), 250);
-        String briefDesc = plainDesc;
-
         String logoUrl = pickEmployerLogoUrl(detail.employer);
 
         String wFormat = null;
@@ -291,7 +292,7 @@ public class HhVacancyImporter {
                 .sourceVacancyId(hhId)
                 .title(title)
                 .description(rawDesc)
-                .descriptionPlain(briefDesc)
+                .descriptionPlain(plainDesc)
                 .url(detail.alternate_url)
                 .employerName(detail.employer != null ? detail.employer.name : null)
                 .employerLogoUrl(logoUrl)
@@ -394,7 +395,6 @@ public class HhVacancyImporter {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     static class SearchResponse {
-        public int found;
         public int pages;
         public List<VacancyItem> items;
     }

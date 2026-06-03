@@ -38,7 +38,7 @@ logging:
 
 skillmatch:
   hh-import:
-    enabled: true
+    enabled: false
 
 app:
   jwt:
